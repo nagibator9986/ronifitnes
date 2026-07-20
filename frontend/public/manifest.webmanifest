@@ -1,10 +1,17 @@
 {
-  "name": "RONI FITNESS",
-  "short_name": "Roni",
-  "description": "Персональный тренинг с Русланом",
+  "name": "IlluminartAI",
+  "short_name": "IlluminartAI",
+  "description": "AI-решения для бизнеса: чат-боты, агенты, ML и автоматизация",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0b0b0e",
-  "theme_color": "#ff4d2e",
-  "icons": []
+  "background_color": "#04050c",
+  "theme_color": "#04050c",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
 }

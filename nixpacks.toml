@@ -1,7 +1,7 @@
 # Railway / Nixpacks build configuration
-# Single image: builds React frontend AND installs Python backend.
-# We create an explicit /opt/venv since the "python311" Nix package
-# does not expose a bare `pip` binary on PATH.
+# Один образ: собирает React-фронтенд и ставит Python-бэкенд.
+# Явный /opt/venv нужен потому, что nix-пакет "python311"
+# не даёт голого `pip` в PATH.
 
 [phases.setup]
 nixPkgs = ["python311", "nodejs_20", "gcc"]

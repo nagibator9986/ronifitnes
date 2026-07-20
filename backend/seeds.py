@@ -1,248 +1,272 @@
-"""Idempotent seed script. Run: python seeds.py"""
-import os
-from pathlib import Path
-from datetime import date, datetime, timedelta
+"""Создаёт БД и наполняет её стартовым контентом. Идемпотентно:
+уже существующие данные не трогает, можно запускать сколько угодно раз.
+
+    python seeds.py
+"""
 
 from extensions import db
-from models import (
-    User, Questionnaire, Exercise, WorkoutPlan, WorkoutDay, WorkoutItem,
-    NutritionPlan, Meal, GalleryPhoto, Setting, ProgressPhoto, Measurement,
-    ScheduleEvent,
-)
+from models import ContactMessage, Partner, Project, Service, Setting, User
+from utils import unique_slug
+
+DEFAULT_SETTINGS = {
+    "hero_badge": "AI-решения под ключ для бизнеса",
+    "hero_title": "Освещаем путь бизнеса технологиями искусственного интеллекта",
+    "hero_subtitle": (
+        "IlluminartAI проектирует и внедряет чат-ботов, автономных AI-агентов, "
+        "ML-модели и интеллектуальную автоматизацию — от идеи до продакшена."
+    ),
+    "stat_projects": "40+",
+    "stat_projects_label": "реализованных проектов",
+    "stat_clients": "25+",
+    "stat_clients_label": "довольных клиентов",
+    "stat_years": "7+",
+    "stat_years_label": "лет в разработке",
+    "stat_uptime": "24/7",
+    "stat_uptime_label": "поддержка решений",
+    "founder_name": "Тлеубеков Азамат Галымулы",
+    "founder_role": "Основатель · Senior Backend Developer · ML/AI Engineer",
+    "founder_bio": (
+        "Более 7 лет строю высоконагруженные backend-системы и внедряю машинное "
+        "обучение в реальные бизнес-процессы. Прошёл путь от инженера до "
+        "архитектора AI-продуктов: чат-боты, автономные агенты, RAG-системы, "
+        "компьютерное зрение и предиктивная аналитика.\n"
+        "Основал IlluminartAI, чтобы компании любого масштаба могли получить "
+        "AI-решения уровня enterprise — быстро, прозрачно и с измеримым "
+        "результатом."
+    ),
+    "founder_skills": "Python, Flask, FastAPI, PostgreSQL, PyTorch, LLM & RAG, LangChain, Computer Vision, MLOps, Highload",
+    "founder_photo": "",
+    "contact_email": "tleubekov.super@gmail.com",
+    "contact_phone": "+7 (700) 000-00-00",
+    "contact_telegram": "https://t.me/illuminartai",
+    "contact_whatsapp": "",
+    "contact_address": "Казахстан · Астана / Алматы · работаем по всему миру",
+    "social_github": "",
+    "social_linkedin": "",
+    "social_instagram": "",
+}
+
+SERVICES = [
+    {
+        "icon": "bot",
+        "title": "Чат-боты с искусственным интеллектом",
+        "description": (
+            "Умные ассистенты для поддержки, продаж и HR: понимают свободную речь, "
+            "знают вашу базу знаний и передают сложные случаи людям."
+        ),
+        "features": "Telegram / WhatsApp / веб-виджет\nRAG по вашим документам\nМультиязычность (RU / KZ / EN)\nАналитика диалогов",
+    },
+    {
+        "icon": "agent",
+        "title": "Автономные AI-агенты",
+        "description": (
+            "Агенты, которые не просто отвечают, а действуют: ищут информацию, "
+            "заполняют CRM, готовят документы и запускают процессы без участия человека."
+        ),
+        "features": "Оркестрация инструментов и API\nМульти-агентные сценарии\nHuman-in-the-loop контроль\nИнтеграция с внутренними системами",
+    },
+    {
+        "icon": "brain",
+        "title": "ML-модели под задачу",
+        "description": (
+            "Прогнозирование спроса, скоринг, рекомендации, обнаружение аномалий — "
+            "обучаем модели на ваших данных и доводим до продакшена."
+        ),
+        "features": "Аудит и подготовка данных\nОбучение и валидация моделей\nMLOps: мониторинг и переобучение\nОблако или on-premise",
+    },
+    {
+        "icon": "vision",
+        "title": "Компьютерное зрение",
+        "description": (
+            "Распознавание объектов, дефектов, документов и людей на фото и видео — "
+            "контроль качества и безопасность в реальном времени."
+        ),
+        "features": "Детекция и классификация\nOCR и разбор документов\nВидеоаналитика в реальном времени\nРабота на edge-устройствах",
+    },
+    {
+        "icon": "automation",
+        "title": "Интеллектуальная автоматизация",
+        "description": (
+            "Избавляем команды от рутины: LLM-конвейеры обрабатывают документы, "
+            "письма и заявки в разы быстрее и без ошибок."
+        ),
+        "features": "Разбор документов и писем\nАвтоматическая маршрутизация заявок\nГенерация отчётов и текстов\nИнтеграция с 1С, CRM, ERP",
+    },
+    {
+        "icon": "consult",
+        "title": "AI-консалтинг и разработка под ключ",
+        "description": (
+            "Поможем найти точки роста для AI в вашем бизнесе, посчитаем эффект "
+            "и реализуем решение полного цикла — от discovery до поддержки."
+        ),
+        "features": "AI-аудит процессов\nProof-of-Concept за 2–4 недели\nПолный цикл разработки\nОбучение вашей команды",
+    },
+]
+
+PROJECTS = [
+    {
+        "title": "NORA — AI-ассистент поддержки",
+        "category": "chatbot",
+        "client": "Финтех-компания",
+        "tagline": "Чат-бот первой линии поддержки: отвечает на 7 из 10 обращений без оператора.",
+        "description": (
+            "Для финтех-сервиса с десятками тысяч обращений в месяц построили "
+            "AI-ассистента на базе LLM с RAG по внутренней базе знаний.\n\n"
+            "Бот работает в веб-чате и Telegram, понимает свободные формулировки, "
+            "уточняет детали и бесшовно передаёт сложные кейсы операторам вместе с "
+            "полным контекстом диалога. Внедрили контур качества: разметку ответов, "
+            "мониторинг галлюцинаций и еженедельное дообучение базы знаний."
+        ),
+        "tech_stack": "Python, LLM, RAG, LangChain, PostgreSQL, Redis, React",
+        "metrics": "−68%|нагрузка на операторов\n9 сек|среднее время ответа\n4.8/5|оценка пользователей",
+        "is_featured": True,
+    },
+    {
+        "title": "Sales Copilot — агент для отдела продаж",
+        "category": "agent",
+        "client": "B2B-дистрибьютор",
+        "tagline": "AI-агент сам квалифицирует лиды, готовит КП и заполняет CRM.",
+        "description": (
+            "Автономный агент подключён к почте, телефонии и CRM компании. Он "
+            "слушает звонки, извлекает договорённости, сам создаёт сделки и задачи, "
+            "готовит черновики коммерческих предложений по прайс-листу и напоминает "
+            "менеджерам о зависших сделках.\n\n"
+            "Ключевой принцип — human-in-the-loop: агент готовит действие, человек "
+            "подтверждает в один клик."
+        ),
+        "tech_stack": "Python, AI Agents, Function Calling, FastAPI, amoCRM API, Whisper",
+        "metrics": "×3|быстрее обработка лида\n+22%|конверсия в сделку\n15 ч/нед|экономия на менеджера",
+        "is_featured": True,
+    },
+    {
+        "title": "DocMind — интеллектуальный разбор документов",
+        "category": "automation",
+        "client": "Логистический оператор",
+        "tagline": "Конвейер OCR + LLM превращает сканы накладных в структурированные данные.",
+        "description": (
+            "Компания вручную вносила данные из тысяч накладных, счетов и актов. "
+            "Мы построили конвейер: OCR распознаёт сканы любого качества, LLM "
+            "извлекает поля и сверяет их со справочниками, спорные документы уходят "
+            "на ручную проверку.\n\n"
+            "Результаты выгружаются напрямую в 1С и ERP заказчика."
+        ),
+        "tech_stack": "Python, OCR, LLM, Computer Vision, Celery, PostgreSQL, 1С API",
+        "metrics": "98.6%|точность извлечения\n×12|быстрее ручного ввода\n0|штрафов за ошибки в данных",
+        "is_featured": True,
+    },
+    {
+        "title": "VisionQC — контроль качества на производстве",
+        "category": "vision",
+        "client": "Производственное предприятие",
+        "tagline": "Камеры + нейросеть находят дефекты продукции на конвейере в реальном времени.",
+        "description": (
+            "Обучили детектор дефектов на собственном датасете предприятия и "
+            "развернули его на edge-устройствах прямо в цехе. Система размечает "
+            "брак на видеопотоке, останавливает партию при превышении порога и "
+            "собирает статистику по сменам и линиям.\n\n"
+            "Дашборд для технологов показывает динамику брака и «горячие» узлы линии."
+        ),
+        "tech_stack": "PyTorch, YOLO, OpenCV, Edge AI, Grafana, TimescaleDB",
+        "metrics": "99.2%|выявляемость дефектов\n−35%|потери от брака\n40 мс|на кадр",
+        "is_featured": False,
+    },
+    {
+        "title": "Aidana — HR-бот для массового найма",
+        "category": "chatbot",
+        "client": "Розничная сеть",
+        "tagline": "Бот проводит первичные интервью и назначает собеседования 24/7.",
+        "description": (
+            "Для сети с постоянным массовым наймом создали HR-бота: он общается с "
+            "кандидатами в WhatsApp и Telegram, задаёт скрининговые вопросы, "
+            "оценивает ответы по критериям вакансии и сам бронирует слоты в "
+            "календарях рекрутеров.\n\n"
+            "Рекрутеры получают готовую карточку кандидата с расшифровкой и оценкой."
+        ),
+        "tech_stack": "Python, LLM, WhatsApp Business API, Google Calendar API, PostgreSQL",
+        "metrics": "×5|больше обработанных откликов\n−60%|время до собеседования\n24/7|приём кандидатов",
+        "is_featured": False,
+    },
+    {
+        "title": "InsightHub — прогноз спроса и запасов",
+        "category": "analytics",
+        "client": "Сеть розничных магазинов",
+        "tagline": "ML-платформа прогнозирует продажи и планирует закупки по каждой точке.",
+        "description": (
+            "Построили платформу прогнозирования спроса: модели учитывают "
+            "сезонность, акции, погоду и локальные события. Система ежедневно "
+            "пересчитывает прогноз по каждому SKU и магазину и формирует "
+            "рекомендации по закупкам.\n\n"
+            "Закупщики работают в веб-кабинете с прозрачными объяснениями прогноза."
+        ),
+        "tech_stack": "Python, Gradient Boosting, Time Series, Airflow, ClickHouse, React",
+        "metrics": "−27%|излишки на складе\n−41%|упущенные продажи\nMAPE 8%|точность прогноза",
+        "is_featured": False,
+    },
+]
+
+PARTNERS = [
+    {"name": "TechnoPark KZ", "description": "Технологический парк — совместные R&D-проекты"},
+    {"name": "FinCore Bank", "description": "AI-ассистент поддержки и антифрод-аналитика"},
+    {"name": "MedApp Clinic", "description": "Автоматизация записи и разбора медицинских документов"},
+    {"name": "RetailPro Group", "description": "Прогнозирование спроса для розничной сети"},
+    {"name": "LogiTrans", "description": "Интеллектуальная обработка транспортных документов"},
+    {"name": "EduSmart Academy", "description": "AI-тьютор и проверка заданий для онлайн-школы"},
+]
 
 
-def get_or_create_user(username, full_name, role, password, trainer_id=None, needs_q=False):
-    u = User.query.filter_by(username=username).first()
-    if u:
-        return u, False
-    u = User(
-        username=username, full_name=full_name, role=role,
-        trainer_id=trainer_id, needs_questionnaire=needs_q,
-    )
-    u.set_password(password)
-    db.session.add(u)
-    db.session.flush()
-    return u, True
-
-
-def seed_logic():
-    """Idempotent seeding logic. Caller must be inside an app context."""
+def ensure_seed_data(verbose: bool = False) -> None:
+    """Создаёт таблицы и базовый контент, если их ещё нет."""
     db.create_all()
 
-    admin, _ = get_or_create_user("admin", "Администратор", "admin", "admin123")
-    ruslan, _ = get_or_create_user("ruslan", "Руслан Орынбаев", "trainer", "ruslan123")
-    demo, _ = get_or_create_user("demo", "Демо Клиент", "client", "demo123",
-                                 trainer_id=ruslan.id, needs_q=False)
-    new_cli, _ = get_or_create_user("newclient", "Новый Клиент", "client", "new123",
-                                    trainer_id=ruslan.id, needs_q=True)
+    def log(msg: str):
+        if verbose:
+            print(msg)
 
-    # ---- Settings (landing) ----
-    defaults = {
-        "hero_title": "RONI FITNESS",
-        "hero_subtitle": "Персональные программы. Доказуемый результат.",
-        "trainer_name": "Руслан Орынбаев",
-        "trainer_tagline": "Сертифицированный тренер · 8+ лет опыта",
-        "trainer_bio": (
-            "Я помогаю клиентам менять тело и образ жизни — без шаблонных программ. "
-            "Каждый план составляется индивидуально: сила, рельеф, восстановление, питание. "
-            "Работаю и онлайн, и в зале. Главное — результат и дисциплина."
-        ),
-        "trainer_phone": "+7 (777) 000-00-00",
-        "trainer_email": "roni@fitness.kz",
-        "trainer_instagram": "@roni.fitness",
-        "achievements": (
-            "8+ лет в персональном тренинге\n"
-            "200+ клиентов с подтверждённым прогрессом\n"
-            "Сертификат FPA, NSCA-CPT\n"
-            "Специализация: набор массы, жиросжигание, реабилитация"
-        ),
-    }
-    for k, v in defaults.items():
-        s = db.session.get(Setting, k)
-        if s is None:
-            db.session.add(Setting(key=k, value=v))
+    if User.query.filter_by(username="admin").first() is None:
+        admin = User(username="admin", full_name="Администратор IlluminartAI", role="admin")
+        admin.set_password("admin123")
+        db.session.add(admin)
+        log("✔ админ: admin / admin123 (смените пароль после первого входа!)")
 
-    # ---- Gallery: link the 25 trainer photos ----
-    if GalleryPhoto.query.count() == 0:
-        trainer_dir = Path(__file__).resolve().parent / "static" / "trainer"
-        if trainer_dir.exists():
-            files = sorted([p.name for p in trainer_dir.iterdir() if p.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp")])
-            for idx, fname in enumerate(files):
-                db.session.add(GalleryPhoto(
-                    file_url=f"/api/public/trainer-photo/{fname}",
-                    caption=None,
-                    order_index=idx,
-                    is_featured=(idx < 3),
-                ))
+    existing = Setting.get_all()
+    for key, value in DEFAULT_SETTINGS.items():
+        if key not in existing:
+            db.session.add(Setting(key=key, value=value))
+    log("✔ настройки лендинга")
 
-    # ---- Demo questionnaire ----
-    if not Questionnaire.query.filter_by(client_id=demo.id).first():
-        db.session.add(Questionnaire(
-            client_id=demo.id,
-            birth_year=1995, gender="male", height_cm=180, weight_kg=88,
-            target_weight_kg=80, experience="intermediate",
-            goals="Сбросить 8 кг, подтянуть пресс, увеличить силу в жиме",
-            injuries="Иногда болит правое плечо после жима",
-            diseases="нет",
-            allergies="нет",
-            diet_preferences="не ем рыбу, люблю мясо и творог",
-            available_days="mon,wed,fri",
-            available_time="19:00",
-            equipment="зал полный",
-            sleep_hours=7, water_l=2.5,
-            motivation="Хочу выглядеть лучше к лету и чувствовать себя бодрее",
-            notes="Готов тренироваться 3 раза в неделю",
-        ))
+    if Service.query.count() == 0:
+        for i, s in enumerate(SERVICES):
+            db.session.add(Service(order_index=i, **s))
+        log(f"✔ услуги: {len(SERVICES)}")
 
-    # ---- Exercise library for trainer Ruslan ----
-    if Exercise.query.filter_by(trainer_id=ruslan.id).count() == 0:
-        seed_ex = [
-            ("Приседания со штангой", "Ноги", "Базовое упражнение на квадрицепсы и ягодицы",
-             "Спина прямая, колени по направлению носков, опуститесь до параллели бедра с полом.",
-             "youtube", "https://www.youtube.com/watch?v=ultWZbUMPL8"),
-            ("Жим лёжа", "Грудь", "Развитие грудных, передней дельты, трицепса",
-             "Лопатки сведены, гриф опускается на середину груди, локти под углом ~45°.",
-             "youtube", "https://www.youtube.com/watch?v=rT7DgCr-3pg"),
-            ("Становая тяга", "Спина", "Базовое движение на заднюю цепь",
-             "Гриф касается ног, спина прямая, тяга начинается с ног.",
-             "youtube", "https://www.youtube.com/watch?v=op9kVnSso6Q"),
-            ("Тяга вертикального блока", "Спина", "Широчайшие мышцы спины",
-             "Локти вниз, грудь подаём вперёд, лопатки сводим.",
-             "youtube", "https://www.youtube.com/watch?v=CAwf7n6Luuc"),
-            ("Подъём гантелей на бицепс", "Руки", "Бицепс",
-             "Локти зафиксированы, без раскачки корпуса.", "none", None),
-            ("Жим гантелей сидя", "Плечи", "Средняя дельта, передняя дельта",
-             "Спина прижата, локти не до конца разгибаем.", "none", None),
-            ("Скручивания", "Пресс", "Прямая мышца живота",
-             "Поясницу прижимаем к полу, движение коротким амплитудой.", "none", None),
-            ("Планка", "Кор", "Стабилизация кора",
-             "Тело в одну линию, таз не проваливать.", "none", None),
-            ("Выпады с гантелями", "Ноги", "Квадрицепс, ягодицы",
-             "Шаг широкий, колено передней ноги над голеностопом.", "none", None),
-            ("Кардио — беговая дорожка", "Кардио", "Восстановление, жиросжигание",
-             "20–30 минут пульс 130–150.", "none", None),
-        ]
-        for n, mg, p, instr, kind, url in seed_ex:
-            db.session.add(Exercise(
-                trainer_id=ruslan.id, name=n, muscle_group=mg, purpose=p,
-                instructions=instr, media_kind=kind, media_url=url,
-            ))
-        db.session.flush()
+    if Project.query.count() == 0:
+        for i, p in enumerate(PROJECTS):
+            db.session.add(Project(slug=unique_slug(Project, p["title"]), order_index=i, **p))
+        log(f"✔ проекты: {len(PROJECTS)}")
 
-    # ---- Demo workout plan ----
-    if not WorkoutPlan.query.filter_by(client_id=demo.id, is_active=True).first():
-        plan = WorkoutPlan(client_id=demo.id, trainer_id=ruslan.id,
-                           name="Тренировочный сплит 3×",
-                           description="Понедельник — низ, среда — верх (тяга), пятница — верх (жим).",
-                           is_active=True)
-        db.session.add(plan)
-        db.session.flush()
+    if Partner.query.count() == 0:
+        for i, p in enumerate(PARTNERS):
+            db.session.add(Partner(order_index=i, **p))
+        log(f"✔ партнёры: {len(PARTNERS)}")
 
-        ex_by_name = {e.name: e for e in Exercise.query.filter_by(trainer_id=ruslan.id).all()}
-
-        days_setup = [
-            (0, "19:00", "Ноги + пресс", [
-                ("Приседания со штангой", 4, "8-10", 120, 80),
-                ("Выпады с гантелями", 3, "12", 90, 18),
-                ("Скручивания", 3, "20", 45, None),
-                ("Планка", 3, "60 сек", 60, None),
-            ]),
-            (2, "19:00", "Спина + бицепс", [
-                ("Становая тяга", 4, "5", 150, 100),
-                ("Тяга вертикального блока", 4, "10", 90, 60),
-                ("Подъём гантелей на бицепс", 3, "12", 60, 14),
-                ("Кардио — беговая дорожка", 1, "20 мин", 0, None),
-            ]),
-            (4, "19:00", "Грудь + плечи", [
-                ("Жим лёжа", 4, "6-8", 120, 80),
-                ("Жим гантелей сидя", 4, "10", 90, 20),
-                ("Скручивания", 3, "20", 45, None),
-            ]),
-        ]
-        for dow, t, title, items in days_setup:
-            day = WorkoutDay(plan_id=plan.id, day_of_week=dow, time_of_day=t, title=title)
-            db.session.add(day)
-            db.session.flush()
-            for idx, (n, sets, reps, rest, w) in enumerate(items):
-                ex = ex_by_name.get(n)
-                if ex:
-                    db.session.add(WorkoutItem(
-                        day_id=day.id, exercise_id=ex.id,
-                        sets=sets, reps=reps, rest_sec=rest, weight_kg=w,
-                        order_index=idx,
-                    ))
-
-    # ---- Demo nutrition plan ----
-    if not NutritionPlan.query.filter_by(client_id=demo.id, is_active=True).first():
-        np_ = NutritionPlan(client_id=demo.id, trainer_id=ruslan.id,
-                            name="Дефицит 500 ккал",
-                            description="Цель — снижение веса. БЖУ распределено на 4 приёма пищи.",
-                            target_kcal=2200, protein_g=180, carbs_g=220, fat_g=70,
-                            is_active=True)
-        db.session.add(np_)
-        db.session.flush()
-        meals = [
-            (None, "breakfast", "08:00", "Овсянка + яйца", "60 г овсянки на воде, 3 яйца, ягоды", 480, 35, 55, 12),
-            (None, "lunch", "13:00", "Курица + рис + овощи", "180 г куриной грудки, 80 г риса, овощной салат", 620, 55, 70, 12),
-            (None, "snack", "16:30", "Творог + орехи", "200 г творога 5%, 20 г миндаля", 380, 35, 12, 18),
-            (None, "dinner", "20:00", "Лосось + гречка", "180 г лосося, 70 г гречки, зелень", 640, 45, 60, 22),
-        ]
-        for idx, (dow, mt, tm, name, desc, kcal, p, c, f) in enumerate(meals):
-            db.session.add(Meal(
-                plan_id=np_.id, day_of_week=dow, meal_type=mt, time_of_day=tm,
-                name=name, description=desc, kcal=kcal, protein=p, carbs=c, fat=f,
-                order_index=idx,
-            ))
-
-    # ---- Demo measurements ----
-    if Measurement.query.filter_by(client_id=demo.id).count() == 0:
-        base = datetime.utcnow() - timedelta(days=90)
-        samples = [
-            (0, 91.0, 22.0), (15, 90.0, 21.5), (30, 88.5, 21.0),
-            (45, 87.5, 20.5), (60, 86.0, 20.0), (90, 84.8, 19.4),
-        ]
-        for off, w, bf in samples:
-            db.session.add(Measurement(
-                client_id=demo.id,
-                weight_kg=w, body_fat_pct=bf,
-                chest=104, waist=92 - (90 - off) / 20, hips=102, biceps=37, thighs=62, calves=39,
-                taken_at=base + timedelta(days=off),
-            ))
-
-    # ---- Demo finance: monthly fees ----
-    if demo.monthly_fee is None:
-        demo.monthly_fee = 80000
-        demo.currency = "₸"
-    if new_cli.monthly_fee is None:
-        new_cli.monthly_fee = 80000
-        new_cli.currency = "₸"
-
-    # ---- Demo schedule slots ----
-    if ScheduleEvent.query.filter_by(trainer_id=ruslan.id).count() == 0:
-        for dow, time, title, cid, kind in [
-            (0, "19:00", "Демо · Ноги", demo.id, "training"),
-            (2, "19:00", "Демо · Спина", demo.id, "training"),
-            (4, "19:00", "Демо · Грудь", demo.id, "training"),
-            (5, "10:00", "Открытый слот", None, "block"),
-        ]:
-            db.session.add(ScheduleEvent(
-                trainer_id=ruslan.id, client_id=cid, title=title, kind=kind,
-                day_of_week=dow, start_time=time, duration_min=60, location="Зал FitArena",
-            ))
+    if ContactMessage.query.count() == 0:
+        db.session.add(
+            ContactMessage(
+                name="Иван Петров",
+                email="ivan@example.com",
+                company="ООО «Пример»",
+                message="Здравствуйте! Хотим внедрить чат-бота для поддержки клиентов. Расскажите, с чего начать?",
+            )
+        )
+        log("✔ демо-заявка")
 
     db.session.commit()
 
 
-def seed():
-    from app import app
-    with app.app_context():
-        seed_logic()
-        print("✓ seed complete")
-        print("  admin / admin123     (super admin)")
-        print("  ruslan / ruslan123   (trainer)")
-        print("  demo / demo123       (client with full plan)")
-        print("  newclient / new123   (client — needs to fill questionnaire)")
-
-
 if __name__ == "__main__":
-    seed()
+    from app import create_app
+
+    app = create_app()
+    with app.app_context():
+        ensure_seed_data(verbose=True)
+        print("\nГотово. Запуск: python app.py → http://localhost:5050")

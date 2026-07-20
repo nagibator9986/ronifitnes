@@ -1,39 +1,53 @@
-from flask import Blueprint, jsonify, send_from_directory, current_app
-from pathlib import Path
+from flask import Blueprint, jsonify, request
 
-from models import GalleryPhoto, Setting, User
+from extensions import db
+from models import ContactMessage, Partner, Project, Service, Setting
 
 bp = Blueprint("public", __name__, url_prefix="/api/public")
 
 
 @bp.get("/landing")
 def landing():
-    photos = GalleryPhoto.query.order_by(GalleryPhoto.order_index.asc()).all()
-    settings = {s.key: s.value for s in Setting.query.all()}
-    trainer = User.query.filter_by(role="trainer").first()
-    return jsonify({
-        "trainer": {
-            "full_name": trainer.full_name if trainer else "Ruslan",
-            "avatar_url": trainer.avatar_url if trainer else None,
-        },
-        "gallery": [p.to_dict() for p in photos],
-        "settings": settings,
-    })
+    services = (
+        Service.query.filter_by(is_active=True)
+        .order_by(Service.order_index, Service.id)
+        .all()
+    )
+    projects = Project.query.order_by(Project.order_index, Project.id).all()
+    partners = Partner.query.order_by(Partner.order_index, Partner.id).all()
+    return jsonify(
+        {
+            "settings": Setting.get_all(),
+            "services": [s.to_dict() for s in services],
+            "projects": [p.to_dict() for p in projects],
+            "partners": [p.to_dict() for p in partners],
+        }
+    )
 
 
-@bp.get("/trainer-photo/<path:filename>")
-def trainer_photo(filename):
-    return send_from_directory(current_app.config["TRAINER_GALLERY_DIR"], filename)
+@bp.post("/contact")
+def contact():
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()
+    email = (data.get("email") or "").strip()
+    phone = (data.get("phone") or "").strip()
+    message = (data.get("message") or "").strip()
 
+    if not name or not message:
+        return jsonify({"error": "Укажите имя и опишите задачу"}), 400
+    if not email and not phone:
+        return jsonify({"error": "Оставьте email или телефон для связи"}), 400
+    if len(message) > 5000:
+        return jsonify({"error": "Сообщение слишком длинное"}), 400
 
-@bp.get("/upload/<kind>/<path:filename>")
-def upload(kind, filename):
-    folder_map = {
-        "avatars": current_app.config["AVATAR_FOLDER"],
-        "progress": current_app.config["PROGRESS_FOLDER"],
-        "exercises": current_app.config["EXERCISE_FOLDER"],
-    }
-    folder = folder_map.get(kind)
-    if not folder:
-        return "not found", 404
-    return send_from_directory(folder, filename)
+    db.session.add(
+        ContactMessage(
+            name=name[:160],
+            email=email[:200],
+            phone=phone[:60],
+            company=(data.get("company") or "").strip()[:200],
+            message=message,
+        )
+    )
+    db.session.commit()
+    return jsonify({"ok": True, "message": "Спасибо! Мы свяжемся с вами в ближайшее время."})

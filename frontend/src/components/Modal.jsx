@@ -1,26 +1,24 @@
 import { useEffect } from 'react'
 
-export default function Modal({ open, onClose, title, children, size }) {
+import Icon from './Icon'
+
+export default function Modal({ onClose, children, wide = false }) {
   useEffect(() => {
-    if (!open) return
-    const onEsc = (e) => { if (e.key === 'Escape') onClose?.() }
-    document.addEventListener('keydown', onEsc)
+    const onKey = (e) => e.key === 'Escape' && onClose()
+    document.addEventListener('keydown', onKey)
     document.body.style.overflow = 'hidden'
     return () => {
-      document.removeEventListener('keydown', onEsc)
+      document.removeEventListener('keydown', onKey)
       document.body.style.overflow = ''
     }
-  }, [open, onClose])
-  if (!open) return null
+  }, [onClose])
+
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className={`modal ${size === 'lg' ? 'modal-lg' : ''}`} onClick={(e) => e.stopPropagation()}>
-        {title && (
-          <div className="flex justify-between items-center mb-16">
-            <h2 style={{ margin: 0 }}>{title}</h2>
-            <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label="close">✕</button>
-          </div>
-        )}
+    <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className={`modal ${wide ? 'modal-wide' : ''}`} role="dialog" aria-modal="true">
+        <button className="modal-close" onClick={onClose} aria-label="Закрыть">
+          <Icon name="x" size={18} />
+        </button>
         {children}
       </div>
     </div>

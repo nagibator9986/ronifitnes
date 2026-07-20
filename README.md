@@ -1,153 +1,86 @@
-# RoniFitness
+# IlluminartAI — сайт компании
 
-Премиальная платформа персонального тренинга для тренера Руслана.
+Лендинг + админ-панель компании **IlluminartAI**: разработка AI-решений для бизнеса —
+чат-боты, автономные AI-агенты, ML-модели, компьютерное зрение и интеллектуальная
+автоматизация.
 
-**Стек:** Flask 3 + SQLAlchemy 2 + SQLite/PostgreSQL · React 18 + Vite · собственная CSS-дизайн-система.
-
-Архитектура и конвенции — [CLAUDE.md](CLAUDE.md).
+**Стек:** Flask 3 · SQLAlchemy · SQLite (или PostgreSQL) · JWT · React 18 · Vite · чистый CSS.
 
 ## Возможности
 
-| Роль       | Что доступно                                                                              |
-|------------|-------------------------------------------------------------------------------------------|
-| Лендинг    | Hero · биография · галерея из 25 фото                                                     |
-| Клиент     | Анкета · план тренировок · план питания · **календарь** · **тренировочный плеер** (таймер отдыха, счётчик сетов) · прогресс-фото с **side-by-side сравнением** · замеры тела с графиками · **достижения** · чат · уведомления |
-| Тренер     | **Обзор** (pending-задачи · активность) · клиенты · **расписание** (день/неделя) · **финансы** (платежи, заработок) · библиотека упражнений · шаблоны программ · заметки по клиенту |
-| Админ      | Пользователи · per-trainer статистика · глобальная лента активности · редактор лендинга и галереи |
+**Лендинг** (`/`):
+- hero с анимированной «нейросетью» на canvas и счётчиками статистики;
+- секции: услуги, процесс работы, **наши проекты** (фильтры по категориям + детальные
+  модалки с метриками), **компании-партнёры**, основатель, контакты;
+- форма заявки «Обсудить проект» — сохраняется в БД и видна в админке;
+- адаптивная вёрстка, тёмная премиум-тема, анимации появления при скролле.
 
-Плюс **PWA-манифест** и полная мобильная адаптация (bottom-nav, bottom-sheet модалки).
+**Админка** (`/admin`, JWT-авторизация):
+- обзор: счётчики + последние заявки;
+- CRUD проектов, партнёров и услуг (с загрузкой обложек и логотипов);
+- входящие заявки с отметкой «прочитано»;
+- настройки всех текстов лендинга, контактов и данных основателя;
+- смена пароля.
 
----
+## Быстрый старт (локально)
 
-## Локальный запуск
+Backend:
 
-### Backend
 ```bash
 cd backend
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python seeds.py            # создаёт БД + демо данные (идемпотентно)
-python app.py              # → http://localhost:5050
+python seeds.py     # создаёт SQLite-БД и демо-контент
+python app.py       # http://localhost:5050
 ```
 
-### Frontend
+Frontend (в соседнем терминале):
+
 ```bash
 cd frontend
 npm install
-npm run dev                # → http://localhost:5173 (проксирует /api → 5050)
+npm run dev         # http://localhost:5173 (проксирует /api на :5050)
 ```
 
-Откройте **http://localhost:5173/**.
+Доступ в админку после сидов: логин `admin`, пароль `admin123` —
+**смените пароль** в «Настройки → Смена пароля» после первого входа.
 
-### Демо-логины
+> Демо-контент (проекты, партнёры, статистика) — заготовка для наполнения:
+> замените его реальными кейсами и компаниями через админку.
 
-| Логин       | Пароль     | Роль                                |
-|-------------|------------|-------------------------------------|
-| `admin`     | `admin123` | Суперадмин                          |
-| `ruslan`    | `ruslan123`| Тренер                              |
-| `demo`      | `demo123`  | Клиент с готовым планом + замерами  |
-| `newclient` | `new123`   | Клиент — увидит анкету при входе    |
-
----
-
-## 🚀 Деплой на Railway
-
-### Шаг 1. Подготовить репозиторий
+## Продакшн-сборка
 
 ```bash
-cd ronifitnes
-git init
-git add .
-git commit -m "RoniFitness initial commit"
-gh repo create ronifitness --public --source=. --push
-# или вручную: git push на свой GitHub
+cd frontend && npm run build   # соберёт frontend/dist
+cd ../backend && gunicorn -w 2 -k gthread -b 0.0.0.0:8080 app:app
 ```
 
-### Шаг 2. Создать сервис на Railway
+Flask сам раздаёт собранный `frontend/dist` и загруженные файлы `/uploads`.
 
-1. Зайдите на https://railway.app → **New Project** → **Deploy from GitHub repo**.
-2. Выберите репозиторий `ronifitness`. Railway увидит `railway.json` и `nixpacks.toml` и автоматически:
-   - установит Node 20 и Python 3.11;
-   - выполнит `npm ci && npm run build` во `frontend/`;
-   - установит `pip install -r requirements.txt` в `backend/`;
-   - запустит `gunicorn` на `$PORT`.
+## Деплой на Railway
 
-### Шаг 3. Добавить PostgreSQL (рекомендуется)
+Репозиторий готов к деплою «как есть»: `nixpacks.toml` собирает фронтенд и бэкенд
+в один образ, `railway.json` настраивает healthcheck (`/api/health`).
 
-В проекте на Railway: **+ New** → **Database** → **Add PostgreSQL**.
-Railway автоматически прокинет `DATABASE_URL` в ваш Flask-сервис. Приложение само понимает оба варианта (SQLite ↔ Postgres).
-
-### Шаг 4. Указать переменные окружения
-
-В сервисе Flask → **Variables**:
-
-| Переменная        | Значение                                         |
-|-------------------|--------------------------------------------------|
-| `SECRET_KEY`      | длинная случайная строка (32+ символов)          |
-| `JWT_SECRET`      | другая длинная случайная строка                  |
-| `FLASK_ENV`       | `production`                                     |
-| `ALLOWED_ORIGINS` | (опц.) `https://your-app.up.railway.app`          |
-| `UPLOAD_DIR`      | (если подключили Volume) `/data/uploads`         |
-
-> Скопировать пример: [`.env.example`](.env.example).
-
-### Шаг 5. (опц.) Подключить Volume для пользовательских загрузок
-
-Без Volume аватарки и фото прогресса будут стираться при каждом redeploy.
-
-1. В Railway: **+ New** → **Volume** → mount path `/data`.
-2. Добавьте переменную `UPLOAD_DIR=/data/uploads`.
-
-### Шаг 6. Открыть приложение
-
-Railway выдаст URL вида `https://ronifitness-production.up.railway.app`. На первом запросе backend автоматически создаст таблицы и засеет демо-данные.
-
-> Сменить дефолтные пароли админа/тренера сразу после первого входа.
-
----
-
-## Production-сборка вручную
-
-```bash
-cd frontend && npm run build           # → frontend/dist/
-cd ../backend && FLASK_ENV=production gunicorn -w 2 -b 0.0.0.0:8000 app:app
-# теперь Flask сам отдаёт собранный React на /, и API на /api/*
-```
-
----
+Переменные окружения (Settings → Variables): см. `.env.example` —
+минимум `SECRET_KEY`, `JWT_SECRET`, `FLASK_ENV=production`. Для сохранности
+загруженных картинок подключите Volume и задайте `UPLOAD_DIR=/data/uploads`;
+для PostgreSQL просто добавьте плагин — `DATABASE_URL` подхватится автоматически.
 
 ## Структура
 
 ```
-ronifitnes/
-├── CLAUDE.md, README.md, .env.example, .gitignore
-├── Procfile, railway.json, nixpacks.toml      ← deploy
-├── backend/
-│   ├── app.py            ← Flask app + SPA fallback
-│   ├── config.py         ← DATABASE_URL / env-aware
-│   ├── models.py         ← User, Questionnaire, Exercise, WorkoutPlan, …,
-│   │                       Payment, ScheduleEvent, Notification, TrainerNote, …
-│   ├── seeds.py          ← seed_logic() — авто-сидится при первом старте
-│   ├── routes/
-│   │   ├── auth.py, public.py
-│   │   ├── trainer.py, client.py, admin.py
-│   │   ├── notifications.py
-│   │   ├── finance.py    ← /api/trainer/finance/*
-│   │   └── schedule.py   ← /api/trainer/schedule/*
-│   ├── static/trainer/   ← 25 фото лендинга
-│   └── uploads/          ← аватары / прогресс / медиа упражнений
-└── frontend/
-    ├── package.json, vite.config.js
-    ├── public/manifest.webmanifest
-    └── src/
-        ├── main.jsx, App.jsx, api.js, auth.jsx
-        ├── components/   ← Layout, Modal, Toast, Chart, NotificationBell, Skeleton, common
-        ├── styles/       ← tokens.css, app.css
-        └── pages/
-            ├── Landing, Login, Questionnaire
-            ├── client/   ← Dashboard, Plan, Calendar, Progress, Achievements,
-            │              Chat, Profile, WorkoutPlayer
-            ├── trainer/  ← Overview, Clients, ClientDetail, Library, Templates,
-            │              Schedule, Finance
-            └── admin/    ← Users, Trainers, Activity, Gallery
+backend/
+  app.py            # фабрика приложения, раздача SPA и /uploads
+  config.py         # env-конфигурация (SQLite/PostgreSQL, JWT, uploads)
+  models.py         # User, Service, Project, Partner, ContactMessage, Setting
+  routes/
+    auth.py         # /api/auth — вход, текущий пользователь
+    public.py       # /api/public — данные лендинга, форма заявки
+    admin.py        # /api/admin — CRUD, заявки, настройки, upload
+  seeds.py          # идемпотентные сиды (вызываются и при старте приложения)
+frontend/
+  src/pages/        # Landing, Admin, AdminLogin
+  src/components/   # лендинг-секции, админ-вкладки, UI-примитивы
+  src/styles/       # дизайн-токены + глобальные стили
 ```

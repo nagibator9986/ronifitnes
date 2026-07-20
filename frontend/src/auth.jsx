@@ -1,48 +1,57 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import api, { TOKEN_KEY } from './api'
+import { Navigate } from 'react-router-dom'
 
-const AuthCtx = createContext(null)
+import { api, TOKEN_KEY } from './api'
+
+const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const t = localStorage.getItem(TOKEN_KEY)
-    if (!t) {
+    const token = localStorage.getItem(TOKEN_KEY)
+    if (!token) {
       setLoading(false)
       return
     }
-    api.get('/auth/me')
-      .then((r) => setUser(r.data))
+    api
+      .get('/auth/me')
+      .then((res) => setUser(res.data.user))
       .catch(() => localStorage.removeItem(TOKEN_KEY))
       .finally(() => setLoading(false))
   }, [])
 
   const login = async (username, password) => {
-    const { data } = await api.post('/auth/login', { username, password })
-    localStorage.setItem(TOKEN_KEY, data.access_token)
-    setUser(data.user)
-    return data.user
+    const res = await api.post('/auth/login', { username, password })
+    localStorage.setItem(TOKEN_KEY, res.data.access_token)
+    setUser(res.data.user)
+    return res.data.user
   }
 
   const logout = () => {
     localStorage.removeItem(TOKEN_KEY)
     setUser(null)
-    location.href = '/'
-  }
-
-  const refresh = async () => {
-    const { data } = await api.get('/auth/me')
-    setUser(data)
-    return data
   }
 
   return (
-    <AuthCtx.Provider value={{ user, loading, login, logout, refresh, setUser }}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
-    </AuthCtx.Provider>
+    </AuthContext.Provider>
   )
 }
 
-export const useAuth = () => useContext(AuthCtx)
+export const useAuth = () => useContext(AuthContext)
+
+export function RequireAdmin({ children }) {
+  const { user, loading } = useAuth()
+  if (loading) {
+    return (
+      <div className="page-loader">
+        <div className="spinner" />
+      </div>
+    )
+  }
+  if (!user || user.role !== 'admin') return <Navigate to="/admin/login" replace />
+  return children
+}

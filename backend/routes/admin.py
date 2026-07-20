@@ -1,204 +1,278 @@
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, jsonify, request
+from flask_jwt_extended import get_jwt_identity
 
 from extensions import db
-from models import User, GalleryPhoto, Setting
-from utils import role_required, generate_username, generate_password, save_upload, allowed_image
+from models import ContactMessage, Partner, Project, Service, Setting, User
+from utils import role_required, save_upload, unique_slug
 
 bp = Blueprint("admin", __name__, url_prefix="/api/admin")
 
 
-# ---------- USERS ----------
+# ---------------------------------------------------------------- overview
 
-@bp.get("/users")
+@bp.get("/overview")
 @role_required("admin")
-def list_users(_):
-    role = request.args.get("role")
-    q = User.query
-    if role:
-        q = q.filter_by(role=role)
-    users = q.order_by(User.created_at.desc()).all()
-    return jsonify([u.to_dict() for u in users])
-
-
-@bp.post("/users")
-@role_required("admin")
-def create_user(_):
-    data = request.get_json(silent=True) or {}
-    role = (data.get("role") or "client").lower()
-    if role not in {"admin", "trainer", "client"}:
-        return jsonify({"error": "invalid role"}), 400
-
-    full_name = (data.get("full_name") or "").strip()
-    if not full_name:
-        return jsonify({"error": "Имя обязательно"}), 400
-
-    username = (data.get("username") or "").strip().lower()
-    if not username:
-        username = generate_username(full_name, lambda u: User.query.filter(db.func.lower(User.username) == u).first() is not None)
-
-    password = data.get("password") or generate_password()
-    trainer_id = data.get("trainer_id")
-
-    if User.query.filter(db.func.lower(User.username) == username.lower()).first():
-        return jsonify({"error": "Такой логин уже занят"}), 400
-
-    user = User(
-        username=username,
-        role=role,
-        full_name=full_name,
-        email=data.get("email"),
-        phone=data.get("phone"),
-        trainer_id=trainer_id if role == "client" else None,
-        needs_questionnaire=bool(data.get("needs_questionnaire")) if role == "client" else False,
+def overview():
+    latest = (
+        ContactMessage.query.order_by(ContactMessage.created_at.desc()).limit(5).all()
     )
-    user.set_password(password)
-    db.session.add(user)
-    db.session.commit()
-
-    out = user.to_dict()
-    out["password"] = password  # plaintext only at creation time
-    return jsonify(out), 201
-
-
-@bp.patch("/users/<int:uid>")
-@role_required("admin")
-def update_user(_, uid):
-    user = User.query.get_or_404(uid)
-    data = request.get_json(silent=True) or {}
-    for field in ("full_name", "email", "phone", "trainer_id"):
-        if field in data:
-            setattr(user, field, data[field])
-    if "is_active" in data:
-        user.is_active = bool(data["is_active"])
-    if "needs_questionnaire" in data and user.role == "client":
-        user.needs_questionnaire = bool(data["needs_questionnaire"])
-    if data.get("new_password"):
-        user.set_password(data["new_password"])
-    db.session.commit()
-    return jsonify(user.to_dict())
-
-
-@bp.delete("/users/<int:uid>")
-@role_required("admin")
-def delete_user(_, uid):
-    user = User.query.get_or_404(uid)
-    if user.role == "admin":
-        return jsonify({"error": "Нельзя удалить администратора"}), 400
-    db.session.delete(user)
-    db.session.commit()
-    return jsonify({"ok": True})
-
-
-# ---------- LANDING / GALLERY ----------
-
-@bp.get("/gallery")
-@role_required("admin")
-def list_gallery(_):
-    photos = GalleryPhoto.query.order_by(GalleryPhoto.order_index.asc()).all()
-    return jsonify([p.to_dict() for p in photos])
-
-
-@bp.post("/gallery")
-@role_required("admin")
-def add_gallery(_):
-    file = request.files.get("file")
-    if not file or not allowed_image(file.filename):
-        return jsonify({"error": "Нужно изображение"}), 400
-    fname = save_upload(file, current_app.config["AVATAR_FOLDER"], prefix="gal_")
-    photo = GalleryPhoto(
-        file_url=f"/api/public/upload/avatars/{fname}",
-        caption=request.form.get("caption"),
-        order_index=int(request.form.get("order_index") or 0),
+    return jsonify(
+        {
+            "projects": Project.query.count(),
+            "partners": Partner.query.count(),
+            "services": Service.query.count(),
+            "messages": ContactMessage.query.count(),
+            "unread_messages": ContactMessage.query.filter_by(is_read=False).count(),
+            "latest_messages": [m.to_dict() for m in latest],
+        }
     )
-    db.session.add(photo)
-    db.session.commit()
-    return jsonify(photo.to_dict()), 201
 
 
-@bp.delete("/gallery/<int:pid>")
+# ---------------------------------------------------------------- projects
+
+@bp.get("/projects")
 @role_required("admin")
-def delete_gallery(_, pid):
-    p = GalleryPhoto.query.get_or_404(pid)
+def list_projects():
+    rows = Project.query.order_by(Project.order_index, Project.id).all()
+    return jsonify({"items": [p.to_dict() for p in rows]})
+
+
+def _apply_project(p: Project, data: dict) -> None:
+    p.title = (data.get("title") or p.title or "").strip()
+    p.category = data.get("category") or p.category
+    p.client = (data.get("client") or "").strip()
+    p.tagline = (data.get("tagline") or "").strip()
+    p.description = data.get("description") or ""
+    p.tech_stack = data.get("tech_stack_raw", data.get("tech_stack", p.tech_stack)) or ""
+    p.metrics = data.get("metrics_raw", data.get("metrics", p.metrics)) or ""
+    p.image_url = (data.get("image_url") or "").strip()
+    p.link = (data.get("link") or "").strip()
+    p.is_featured = bool(data.get("is_featured"))
+    p.order_index = int(data.get("order_index") or 0)
+
+
+@bp.post("/projects")
+@role_required("admin")
+def create_project():
+    data = request.get_json(silent=True) or {}
+    if not (data.get("title") or "").strip():
+        return jsonify({"error": "Укажите название проекта"}), 400
+    p = Project(slug=unique_slug(Project, data["title"]))
+    _apply_project(p, data)
+    db.session.add(p)
+    db.session.commit()
+    return jsonify({"item": p.to_dict()}), 201
+
+
+@bp.put("/projects/<int:pid>")
+@role_required("admin")
+def update_project(pid):
+    p = db.session.get(Project, pid)
+    if p is None:
+        return jsonify({"error": "Проект не найден"}), 404
+    data = request.get_json(silent=True) or {}
+    _apply_project(p, data)
+    if data.get("title"):
+        p.slug = unique_slug(Project, data["title"], current_id=p.id)
+    db.session.commit()
+    return jsonify({"item": p.to_dict()})
+
+
+@bp.delete("/projects/<int:pid>")
+@role_required("admin")
+def delete_project(pid):
+    p = db.session.get(Project, pid)
+    if p is None:
+        return jsonify({"error": "Проект не найден"}), 404
     db.session.delete(p)
     db.session.commit()
     return jsonify({"ok": True})
 
 
-# ---------- SETTINGS ----------
+# ---------------------------------------------------------------- partners
 
-@bp.get("/settings")
+@bp.get("/partners")
 @role_required("admin")
-def list_settings(_):
-    items = Setting.query.all()
-    return jsonify({s.key: s.value for s in items})
+def list_partners():
+    rows = Partner.query.order_by(Partner.order_index, Partner.id).all()
+    return jsonify({"items": [p.to_dict() for p in rows]})
 
 
-@bp.put("/settings")
+def _apply_partner(p: Partner, data: dict) -> None:
+    p.name = (data.get("name") or p.name or "").strip()
+    p.logo_url = (data.get("logo_url") or "").strip()
+    p.website = (data.get("website") or "").strip()
+    p.description = (data.get("description") or "").strip()
+    p.order_index = int(data.get("order_index") or 0)
+
+
+@bp.post("/partners")
 @role_required("admin")
-def update_settings(_):
+def create_partner():
     data = request.get_json(silent=True) or {}
-    for k, v in data.items():
-        s = db.session.get(Setting, k)
-        if s is None:
-            s = Setting(key=k, value=v)
-            db.session.add(s)
-        else:
-            s.value = v
+    if not (data.get("name") or "").strip():
+        return jsonify({"error": "Укажите название компании"}), 400
+    p = Partner()
+    _apply_partner(p, data)
+    db.session.add(p)
+    db.session.commit()
+    return jsonify({"item": p.to_dict()}), 201
+
+
+@bp.put("/partners/<int:pid>")
+@role_required("admin")
+def update_partner(pid):
+    p = db.session.get(Partner, pid)
+    if p is None:
+        return jsonify({"error": "Партнёр не найден"}), 404
+    _apply_partner(p, request.get_json(silent=True) or {})
+    db.session.commit()
+    return jsonify({"item": p.to_dict()})
+
+
+@bp.delete("/partners/<int:pid>")
+@role_required("admin")
+def delete_partner(pid):
+    p = db.session.get(Partner, pid)
+    if p is None:
+        return jsonify({"error": "Партнёр не найден"}), 404
+    db.session.delete(p)
     db.session.commit()
     return jsonify({"ok": True})
 
 
-# ---------- DASHBOARD STATS ----------
+# ---------------------------------------------------------------- services
 
-@bp.get("/stats")
+@bp.get("/services")
 @role_required("admin")
-def stats(_):
-    from models import WorkoutLog, ProgressPhoto, Exercise
-    from datetime import datetime, timedelta
-
-    week_ago = datetime.utcnow() - timedelta(days=7)
-    return jsonify({
-        "trainers": User.query.filter_by(role="trainer").count(),
-        "clients": User.query.filter_by(role="client").count(),
-        "active_clients": User.query.filter_by(role="client", is_active=True).count(),
-        "exercises": Exercise.query.count(),
-        "workouts_week": WorkoutLog.query.filter(WorkoutLog.completed_at >= week_ago).count(),
-        "photos_total": ProgressPhoto.query.count(),
-    })
+def list_services():
+    rows = Service.query.order_by(Service.order_index, Service.id).all()
+    return jsonify({"items": [s.to_dict() for s in rows]})
 
 
-@bp.get("/trainers-detail")
+def _apply_service(s: Service, data: dict) -> None:
+    s.title = (data.get("title") or s.title or "").strip()
+    s.icon = (data.get("icon") or "spark").strip()
+    s.description = data.get("description") or ""
+    s.features = data.get("features_raw", data.get("features", s.features)) or ""
+    s.order_index = int(data.get("order_index") or 0)
+    s.is_active = bool(data.get("is_active", True))
+
+
+@bp.post("/services")
 @role_required("admin")
-def trainers_detail(_):
-    from models import Exercise, WorkoutPlan
-    trainers = User.query.filter_by(role="trainer").all()
-    out = []
-    for t in trainers:
-        clients = User.query.filter_by(trainer_id=t.id, role="client").count()
-        exercises = Exercise.query.filter_by(trainer_id=t.id).count()
-        plans = WorkoutPlan.query.filter_by(trainer_id=t.id, is_active=True).count()
-        out.append({
-            **t.to_dict(),
-            "clients": clients,
-            "exercises": exercises,
-            "active_plans": plans,
-        })
-    return jsonify(out)
+def create_service():
+    data = request.get_json(silent=True) or {}
+    if not (data.get("title") or "").strip():
+        return jsonify({"error": "Укажите название услуги"}), 400
+    s = Service()
+    _apply_service(s, data)
+    db.session.add(s)
+    db.session.commit()
+    return jsonify({"item": s.to_dict()}), 201
 
 
-@bp.get("/activity")
+@bp.put("/services/<int:sid>")
 @role_required("admin")
-def activity(_):
-    from models import WorkoutLog, ProgressPhoto, Questionnaire
-    feed = []
-    for l in WorkoutLog.query.order_by(WorkoutLog.completed_at.desc()).limit(20):
-        u = db.session.get(User,l.client_id)
-        feed.append({"type": "workout", "at": l.completed_at.isoformat(), "user": u.full_name if u else "", "label": "тренировка выполнена"})
-    for p in ProgressPhoto.query.order_by(ProgressPhoto.taken_at.desc()).limit(20):
-        u = db.session.get(User,p.client_id)
-        feed.append({"type": "photo", "at": p.taken_at.isoformat(), "user": u.full_name if u else "", "label": f"фото прогресса ({p.period_label})"})
-    for q in Questionnaire.query.order_by(Questionnaire.submitted_at.desc()).limit(20):
-        u = db.session.get(User,q.client_id)
-        feed.append({"type": "questionnaire", "at": q.submitted_at.isoformat(), "user": u.full_name if u else "", "label": "анкета отправлена"})
-    feed.sort(key=lambda x: x["at"], reverse=True)
-    return jsonify(feed[:40])
+def update_service(sid):
+    s = db.session.get(Service, sid)
+    if s is None:
+        return jsonify({"error": "Услуга не найдена"}), 404
+    _apply_service(s, request.get_json(silent=True) or {})
+    db.session.commit()
+    return jsonify({"item": s.to_dict()})
+
+
+@bp.delete("/services/<int:sid>")
+@role_required("admin")
+def delete_service(sid):
+    s = db.session.get(Service, sid)
+    if s is None:
+        return jsonify({"error": "Услуга не найдена"}), 404
+    db.session.delete(s)
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+# ---------------------------------------------------------------- messages
+
+@bp.get("/messages")
+@role_required("admin")
+def list_messages():
+    rows = ContactMessage.query.order_by(ContactMessage.created_at.desc()).all()
+    return jsonify({"items": [m.to_dict() for m in rows]})
+
+
+@bp.put("/messages/<int:mid>/read")
+@role_required("admin")
+def toggle_read(mid):
+    m = db.session.get(ContactMessage, mid)
+    if m is None:
+        return jsonify({"error": "Заявка не найдена"}), 404
+    m.is_read = not m.is_read
+    db.session.commit()
+    return jsonify({"item": m.to_dict()})
+
+
+@bp.delete("/messages/<int:mid>")
+@role_required("admin")
+def delete_message(mid):
+    m = db.session.get(ContactMessage, mid)
+    if m is None:
+        return jsonify({"error": "Заявка не найдена"}), 404
+    db.session.delete(m)
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+# ---------------------------------------------------------------- settings
+
+@bp.get("/settings")
+@role_required("admin")
+def get_settings():
+    return jsonify({"settings": Setting.get_all()})
+
+
+@bp.put("/settings")
+@role_required("admin")
+def update_settings():
+    data = request.get_json(silent=True) or {}
+    for key, value in data.items():
+        if isinstance(key, str) and len(key) <= 80:
+            Setting.set(key, str(value if value is not None else ""))
+    db.session.commit()
+    return jsonify({"settings": Setting.get_all()})
+
+
+# ---------------------------------------------------------------- misc
+
+@bp.post("/upload")
+@role_required("admin")
+def upload():
+    file = request.files.get("file")
+    if file is None or not file.filename:
+        return jsonify({"error": "Файл не передан"}), 400
+    kind = request.form.get("kind", "misc")
+    if kind not in {"projects", "partners", "founder", "misc"}:
+        kind = "misc"
+    try:
+        url = save_upload(file, kind)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    return jsonify({"url": url})
+
+
+@bp.put("/password")
+@role_required("admin")
+def change_password():
+    data = request.get_json(silent=True) or {}
+    current = data.get("current") or ""
+    new = data.get("new") or ""
+    if len(new) < 6:
+        return jsonify({"error": "Новый пароль должен быть не короче 6 символов"}), 400
+    user = db.session.get(User, int(get_jwt_identity()))
+    if user is None or not user.check_password(current):
+        return jsonify({"error": "Текущий пароль неверен"}), 400
+    user.set_password(new)
+    db.session.commit()
+    return jsonify({"ok": True})

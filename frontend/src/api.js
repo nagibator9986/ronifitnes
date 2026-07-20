@@ -1,28 +1,28 @@
 import axios from 'axios'
 
-export const TOKEN_KEY = 'rf_token'
+export const TOKEN_KEY = 'ia_token'
 
-const api = axios.create({ baseURL: '/api' })
+export const api = axios.create({ baseURL: '/api' })
 
-api.interceptors.request.use((cfg) => {
-  const t = localStorage.getItem(TOKEN_KEY)
-  if (t) cfg.headers.Authorization = `Bearer ${t}`
-  return cfg
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem(TOKEN_KEY)
+  if (token) config.headers.Authorization = `Bearer ${token}`
+  return config
 })
 
 api.interceptors.response.use(
-  (r) => r,
+  (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    const status = err.response?.status
+    const onAdminPage = window.location.pathname.startsWith('/admin')
+    if (status === 401 && onAdminPage && !window.location.pathname.includes('/login')) {
       localStorage.removeItem(TOKEN_KEY)
-      if (!location.pathname.startsWith('/login') && location.pathname !== '/') {
-        location.href = '/login'
-      }
+      window.location.href = '/admin/login'
     }
     return Promise.reject(err)
-  }
+  },
 )
 
-export const apiUrl = (path) => path?.startsWith('http') ? path : path
-
-export default api
+export function apiError(err, fallback = 'Что-то пошло не так, попробуйте ещё раз') {
+  return err?.response?.data?.error || fallback
+}
