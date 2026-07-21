@@ -41,16 +41,19 @@ export default function Contact({ settings }) {
     <section className="section" id="contact">
       <div className="container">
         <Reveal>
-          <div className="cta-banner" style={{ marginBottom: 72 }}>
+          <div className="cta-banner" style={{ marginBottom: 90 }}>
+            <span className="section-kicker" style={{ justifyContent: 'center' }}>
+              06 / Контакты
+            </span>
             <h2>
-              Готовы внедрить <span className="grad-text">AI в свой бизнес?</span>
+              Готовы внедрить AI <em>в свой бизнес?</em>
             </h2>
             <p>
               Расскажите о своей задаче — предложим решение, оценим сроки и покажем, какой
               эффект даст внедрение. Первая консультация бесплатна.
             </p>
             <a href="#contact-form" className="btn btn-primary">
-              Оставить заявку <Icon name="arrow-right" size={18} />
+              Оставить заявку <Icon name="arrow-right" size={16} />
             </a>
           </div>
         </Reveal>
@@ -59,7 +62,7 @@ export default function Contact({ settings }) {
           <Reveal>
             <div className="contact-info">
               <h2>
-                Свяжитесь <span className="grad-text">с нами</span>
+                Свяжитесь <em>с нами</em>
               </h2>
               <p>
                 Ответим в течение рабочего дня. Можно коротко: чем занимаетесь и какую
@@ -76,14 +79,14 @@ export default function Contact({ settings }) {
                       rel="noreferrer"
                     >
                       <span className="ico">
-                        <Icon name={it.icon} size={20} />
+                        <Icon name={it.icon} size={18} />
                       </span>
                       {it.label}
                     </a>
                   ) : (
                     <div className="contact-item" key={it.label}>
                       <span className="ico">
-                        <Icon name={it.icon} size={20} />
+                        <Icon name={it.icon} size={18} />
                       </span>
                       {it.label}
                     </div>
@@ -94,7 +97,7 @@ export default function Contact({ settings }) {
           </Reveal>
 
           <Reveal delay={120}>
-            <form className="card contact-form" onSubmit={submit}>
+            <form className="card contact-form form-lined" onSubmit={submit}>
               <div className="row">
                 <div className="field">
                   <label htmlFor="cf-name">Ваше имя *</label>
@@ -129,7 +132,7 @@ export default function Contact({ settings }) {
               {status.state === 'success' && <p className="form-success">{status.text}</p>}
               <button className="btn btn-primary" disabled={status.state === 'loading'}>
                 {status.state === 'loading' ? 'Отправляем…' : 'Отправить заявку'}
-                <Icon name="send" size={17} />
+                <Icon name="send" size={15} />
               </button>
             </form>
           </Reveal>

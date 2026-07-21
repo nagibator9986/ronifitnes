@@ -72,7 +72,7 @@ function IconPicker({ value, onChange }) {
           title={name}
           style={
             value === name
-              ? { borderColor: 'var(--brand-solid)', color: 'var(--text)', background: 'var(--brand-soft)' }
+              ? { borderColor: 'var(--bone)', color: 'var(--bone)', background: 'var(--s-fill-2)' }
               : undefined
           }
         >

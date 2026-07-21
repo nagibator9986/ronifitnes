@@ -1,43 +1,48 @@
 :root {
-  /* фон */
-  --bg: #04050c;
-  --bg-elev: #0a0c18;
-  --bg-card: rgba(255, 255, 255, 0.028);
-  --bg-card-hover: rgba(255, 255, 255, 0.055);
-  --border: rgba(255, 255, 255, 0.09);
-  --border-strong: rgba(255, 255, 255, 0.16);
+  /* палитра: строгий монохром под логотип */
+  --ink: #070706;        /* почти чёрный */
+  --ink-2: #0e0e0c;      /* приподнятый чёрный */
+  --paper: #f1ede4;      /* тёплая бумага */
+  --paper-2: #e8e3d7;
+  --bone: #f6f3ec;       /* «мрамор» — светлый текст на чёрном */
 
-  /* текст */
-  --text: #eef0ff;
-  --muted: #9297bd;
-  --muted-2: #5d628a;
+  /* семантические переменные секции (по умолчанию — чёрная секция).
+     .sec-paper переопределяет их для светлых секций. */
+  --s-bg: var(--ink);
+  --s-bg2: var(--ink-2);
+  --s-fg: var(--bone);
+  --s-muted: #999488;
+  --s-muted2: #615d53;
+  --s-line: rgba(246, 243, 236, 0.16);
+  --s-line-strong: rgba(246, 243, 236, 0.38);
+  --s-fill: rgba(246, 243, 236, 0.045);
+  --s-fill-2: rgba(246, 243, 236, 0.09);
 
-  /* бренд: violet → cyan «свечение» */
-  --brand-a: #8b5cf6;
-  --brand-b: #22d3ee;
-  --brand: linear-gradient(120deg, #8b5cf6 0%, #6366f1 45%, #22d3ee 100%);
-  --brand-solid: #7c6cf8;
-  --brand-soft: rgba(124, 108, 248, 0.14);
-  --cyan-soft: rgba(34, 211, 238, 0.12);
+  /* функциональные (только формы/админка), приглушённые под монохром */
+  --success: #86a67e;
+  --warn: #c2a25e;
+  --danger: #cf6a5c;
 
-  --success: #34d399;
-  --warn: #fbbf24;
-  --danger: #f87171;
+  /* геометрия: только прямые углы */
+  --radius: 0;
 
-  /* геометрия */
-  --radius: 18px;
-  --radius-sm: 12px;
-  --radius-xs: 8px;
+  /* шрифты: серифный дисплей (как в логотипе) + гротеск + моно */
+  --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Courier New', monospace;
 
-  /* тени и свечение */
-  --shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
-  --glow-brand: 0 0 42px rgba(124, 108, 248, 0.35);
-  --glow-cyan: 0 0 42px rgba(34, 211, 238, 0.25);
-
-  /* шрифты */
-  --font-body: 'Manrope', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-display: 'Unbounded', 'Manrope', system-ui, sans-serif;
-
-  /* контейнер */
   --container: 1180px;
+}
+
+/* светлая («бумажная») секция — полная инверсия */
+.sec-paper {
+  --s-bg: var(--paper);
+  --s-bg2: var(--paper-2);
+  --s-fg: #0b0b0a;
+  --s-muted: #565248;
+  --s-muted2: #8d8779;
+  --s-line: rgba(11, 11, 10, 0.22);
+  --s-line-strong: rgba(11, 11, 10, 0.55);
+  --s-fill: rgba(11, 11, 10, 0.04);
+  --s-fill-2: rgba(11, 11, 10, 0.08);
 }

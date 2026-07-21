@@ -24,22 +24,22 @@ export default function Process() {
     <section className="section" id="process">
       <div className="container">
         <Reveal className="section-head">
-          <span className="section-kicker">Как мы работаем</span>
+          <span className="section-kicker">02 / Процесс</span>
           <h2 className="section-title">
-            Прозрачный путь <span className="grad-text">от идеи до результата</span>
+            Прозрачный путь <em>от идеи до результата</em>
           </h2>
         </Reveal>
-        <div className="process-grid">
-          {STEPS.map((s, i) => (
-            <Reveal key={s.title} delay={i * 90}>
-              <div className="card process-step">
+        <Reveal>
+          <div className="process-grid">
+            {STEPS.map((s, i) => (
+              <div className="process-step" key={s.title}>
                 <div className="process-num">{String(i + 1).padStart(2, '0')}</div>
                 <h3>{s.title}</h3>
                 <p>{s.text}</p>
               </div>
-            </Reveal>
-          ))}
-        </div>
+            ))}
+          </div>
+        </Reveal>
       </div>
     </section>
   )

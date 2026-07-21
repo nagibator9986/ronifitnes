@@ -4,8 +4,8 @@
   "description": "AI-решения для бизнеса: чат-боты, агенты, ML и автоматизация",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#04050c",
-  "theme_color": "#04050c",
+  "background_color": "#070706",
+  "theme_color": "#070706",
   "icons": [
     {
       "src": "/favicon.svg",

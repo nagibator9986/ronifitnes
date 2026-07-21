@@ -13,12 +13,12 @@ export default function Footer({ settings = {} }) {
   return (
     <footer className="footer">
       <div className="container footer-inner">
-        <Logo size={26} />
-        <p>© {new Date().getFullYear()} IlluminartAI · AI-решения для бизнеса</p>
+        <Logo />
+        <p>© {new Date().getFullYear()} IlluminartAI — AI-решения для бизнеса</p>
         <div className="footer-links">
           {socials.map((s) => (
             <a key={s.label} href={s.href} target="_blank" rel="noreferrer" aria-label={s.label}>
-              <Icon name={s.icon} size={18} />
+              <Icon name={s.icon} size={17} />
             </a>
           ))}
           <Link to="/admin">Админка</Link>

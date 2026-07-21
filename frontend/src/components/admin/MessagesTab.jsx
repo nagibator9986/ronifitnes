@@ -48,7 +48,7 @@ export default function MessagesTab({ onChanged }) {
             <b>{m.name}</b>
             {m.company && <span className="chip">{m.company}</span>}
             {!m.is_read && (
-              <span className="chip" style={{ color: 'var(--brand-b)', borderColor: 'rgba(34,211,238,.4)' }}>
+              <span className="chip" style={{ color: 'var(--bone)', borderColor: 'var(--s-line-strong)' }}>
                 новая
               </span>
             )}

@@ -1,14 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#8b5cf6"/>
-      <stop offset="1" stop-color="#22d3ee"/>
-    </linearGradient>
-  </defs>
-  <rect width="64" height="64" rx="14" fill="#0a0c18"/>
-  <circle cx="32" cy="20" r="5" fill="url(#g)"/>
-  <circle cx="16" cy="40" r="4" fill="url(#g)" opacity=".85"/>
-  <circle cx="48" cy="40" r="4" fill="url(#g)" opacity=".85"/>
-  <circle cx="32" cy="50" r="3" fill="url(#g)" opacity=".7"/>
-  <path d="M32 20 16 40M32 20l16 20M16 40l16 10 16-10" stroke="url(#g)" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <rect width="64" height="64" fill="#070706"/>
+  <rect x="7" y="7" width="50" height="50" fill="none" stroke="#f6f3ec" stroke-width="2.4"/>
+  <polygon points="30,14 40,20 33,27 26,22" fill="#f6f3ec"/>
+  <polygon points="24,30 35,29 38,38 27,41" fill="#f6f3ec"/>
+  <polygon points="41,31 46,36 42,43 38,40" fill="#f6f3ec" opacity=".85"/>
+  <polygon points="22,44 31,44 28,52 20,50" fill="#f6f3ec" opacity=".9"/>
+  <polygon points="43,15 48,17 46,23" fill="#f6f3ec" opacity=".7"/>
+  <polygon points="17,24 22,26 19,32 15,29" fill="#f6f3ec" opacity=".65"/>
 </svg>

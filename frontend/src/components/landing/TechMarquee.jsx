@@ -1,5 +1,3 @@
-import Icon from '../Icon'
-
 const TECH = [
   'Python', 'PyTorch', 'TensorFlow', 'LLM & RAG', 'LangChain', 'OpenAI API',
   'Claude API', 'Computer Vision', 'Flask', 'FastAPI', 'React', 'PostgreSQL',
@@ -7,12 +5,9 @@ const TECH = [
 ]
 
 export default function TechMarquee() {
-  const row = (key) =>
-    TECH.map((t) => (
-      <span className="marquee-item" key={`${key}-${t}`}>
-        <Icon name="spark" size={14} /> {t}
-      </span>
-    ))
+  const row = (key) => TECH.map((t) => (
+    <span className="marquee-item" key={`${key}-${t}`}>{t}</span>
+  ))
 
   return (
     <div className="marquee" aria-hidden="true">

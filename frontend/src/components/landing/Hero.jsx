@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 import Icon from '../Icon'
-import NeuralCanvas from '../NeuralCanvas'
+import ShardField from '../ShardField'
 
 /** Плавный count-up для значений вида "40+", "24/7", "×3" — анимируем только число. */
 function useCountUp(raw) {
@@ -69,53 +69,66 @@ export default function Hero({ settings }) {
 
   return (
     <section className="hero" id="top">
-      <NeuralCanvas className="hero-canvas" />
+      <ShardField className="hero-canvas" />
       <div className="container">
-        <div className="hero-content">
-          <span className="badge">
-            <span className="dot" />
-            {s.hero_badge || 'AI-решения для бизнеса'}
-          </span>
-          <h1 className="hero-title">
-            {s.hero_title ? (
-              <HighlightedTitle title={s.hero_title} />
-            ) : (
-              <>
-                Освещаем путь бизнеса <span className="grad-text">искусственным интеллектом</span>
-              </>
-            )}
-          </h1>
-          <p className="hero-sub">{s.hero_subtitle}</p>
-          <div className="hero-actions">
-            <a href="#contact" className="btn btn-primary">
-              Обсудить проект <Icon name="arrow-right" size={18} />
-            </a>
-            <a href="#projects" className="btn btn-ghost">
-              Смотреть кейсы
-            </a>
-          </div>
-          {stats.length > 0 && (
-            <div className="hero-stats">
-              {stats.map((st) => (
-                <Stat key={st.label} value={st.value} label={st.label} />
-              ))}
+        <div className="hero-grid">
+          <div className="hero-content">
+            <span className="badge">
+              <span className="dot" />
+              {s.hero_badge || 'AI-решения для бизнеса'}
+            </span>
+            <h1 className="hero-title">
+              {s.hero_title ? (
+                <HighlightedTitle title={s.hero_title} />
+              ) : (
+                <>
+                  Инженерия искусственного интеллекта <em>как искусство</em>
+                </>
+              )}
+            </h1>
+            <p className="hero-sub">{s.hero_subtitle}</p>
+            <div className="hero-actions">
+              <a href="#contact" className="btn btn-primary">
+                Обсудить проект <Icon name="arrow-right" size={16} />
+              </a>
+              <a href="#projects" className="btn btn-ghost">
+                Смотреть кейсы
+              </a>
             </div>
-          )}
+          </div>
+
+          <figure className="hero-art">
+            <img src="/brand/logo.jpg" alt="IlluminartAI — фирменный знак" />
+            <figcaption>
+              <span>Illuminart</span>
+              <span>est. AI</span>
+            </figcaption>
+          </figure>
         </div>
       </div>
+
+      {stats.length > 0 && (
+        <div className="hero-stats">
+          <div className="container" style={{ display: 'contents' }}>
+            {stats.map((st) => (
+              <Stat key={st.label} value={st.value} label={st.label} />
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   )
 }
 
-/** Подсвечиваем градиентом последние два слова заголовка. */
+/** Последние два слова заголовка — курсивным серифом. */
 function HighlightedTitle({ title }) {
   const words = title.trim().split(/\s+/)
-  if (words.length < 4) return <span className="grad-text">{title}</span>
+  if (words.length < 4) return <em>{title}</em>
   const head = words.slice(0, -2).join(' ')
   const tail = words.slice(-2).join(' ')
   return (
     <>
-      {head} <span className="grad-text">{tail}</span>
+      {head} <em>{tail}</em>
     </>
   )
 }

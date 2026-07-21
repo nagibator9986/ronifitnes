@@ -13,44 +13,85 @@ export const CATEGORY_LABELS = {
   analytics: 'Аналитика',
 }
 
-const COVER = {
-  chatbot: { from: '#7c3aed', to: '#4f46e5', icon: 'bot' },
-  agent: { from: '#4f46e5', to: '#0ea5e9', icon: 'agent' },
-  ml: { from: '#6d28d9', to: '#db2777', icon: 'brain' },
-  vision: { from: '#0e7490', to: '#22d3ee', icon: 'vision' },
-  automation: { from: '#b45309', to: '#f59e0b', icon: 'automation' },
-  analytics: { from: '#047857', to: '#34d399', icon: 'chart' },
+/** Детерминированный ГПСЧ, чтобы обложка проекта не менялась между рендерами. */
+function mulberry32(seed) {
+  let a = seed >>> 0
+  return () => {
+    a |= 0
+    a = (a + 0x6d2b79f5) | 0
+    let t = Math.imul(a ^ (a >>> 15), 1 | a)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
 }
 
-function Cover({ project }) {
-  if (project.image_url) {
-    return (
-      <div className="project-cover">
-        <img src={project.image_url} alt={project.title} loading="lazy" />
-        {project.is_featured && <FeaturedBadge />}
-      </div>
-    )
-  }
-  const c = COVER[project.category] || COVER.chatbot
+/** Генеративная обложка: белые «осколки» на чёрном — мотив логотипа. */
+function ShardCover({ seed, index }) {
+  const shards = useMemo(() => {
+    const rnd = mulberry32(seed * 7919 + 17)
+    const out = []
+    const n = 9 + Math.floor(rnd() * 5)
+    for (let i = 0; i < n; i++) {
+      const cx = 30 + rnd() * 260
+      const cy = 20 + rnd() * 160
+      const r = 8 + rnd() * 26
+      const sides = 3 + Math.floor(rnd() * 2)
+      const pts = []
+      for (let k = 0; k < sides; k++) {
+        const a = (k / sides) * Math.PI * 2 + rnd() * 1.1
+        const rr = r * (0.5 + rnd() * 0.7)
+        pts.push(`${(cx + Math.cos(a) * rr).toFixed(1)},${(cy + Math.sin(a) * rr).toFixed(1)}`)
+      }
+      out.push({
+        points: pts.join(' '),
+        filled: rnd() > 0.4,
+        opacity: 0.55 + rnd() * 0.45,
+      })
+    }
+    return out
+  }, [seed])
+
   return (
-    <div className="project-cover">
-      <div
-        className="project-cover-gen"
-        style={{ background: `linear-gradient(135deg, ${c.from} 0%, ${c.to} 100%)` }}
-      >
-        <div className="project-cover-grid" />
-        <Icon name={c.icon} size={54} className="cover-icon" strokeWidth={1.4} />
-      </div>
-      {project.is_featured && <FeaturedBadge />}
+    <div className="project-cover-gen" aria-hidden="true">
+      <svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice">
+        <rect width="320" height="200" fill="#000" />
+        <rect x="12" y="12" width="296" height="176" fill="none" stroke="#f6f3ec" strokeOpacity="0.5" strokeWidth="1" />
+        {shards.map((sh, i) =>
+          sh.filled ? (
+            <polygon key={i} points={sh.points} fill="#f6f3ec" fillOpacity={sh.opacity} />
+          ) : (
+            <polygon key={i} points={sh.points} fill="none" stroke="#f6f3ec" strokeOpacity={sh.opacity} />
+          ),
+        )}
+        <text
+          x="26"
+          y="176"
+          fill="#f6f3ec"
+          fontFamily="Playfair Display, Georgia, serif"
+          fontStyle="italic"
+          fontSize="44"
+        >
+          {String(index + 1).padStart(2, '0')}
+        </text>
+      </svg>
     </div>
   )
 }
 
-function FeaturedBadge() {
+function Cover({ project, index }) {
   return (
-    <span className="project-featured">
-      <Icon name="star" size={12} /> Флагман
-    </span>
+    <div className="project-cover">
+      {project.image_url ? (
+        <img src={project.image_url} alt={project.title} loading="lazy" />
+      ) : (
+        <ShardCover seed={project.id} index={index} />
+      )}
+      {project.is_featured && (
+        <span className="project-featured">
+          <Icon name="star" size={11} /> Флагман
+        </span>
+      )}
+    </div>
   )
 }
 
@@ -68,12 +109,12 @@ export default function Projects({ projects }) {
   if (!projects.length) return null
 
   return (
-    <section className="section" id="projects">
+    <section className="section sec-paper" id="projects">
       <div className="container">
         <Reveal className="section-head">
-          <span className="section-kicker">Наши проекты</span>
+          <span className="section-kicker">03 / Портфолио</span>
           <h2 className="section-title">
-            Кейсы с <span className="grad-text">измеримым результатом</span>
+            Кейсы с <em>измеримым результатом</em>
           </h2>
           <p className="section-sub">
             Каждый проект — это конкретные цифры: сэкономленные часы, выросшая конверсия,
@@ -110,7 +151,7 @@ export default function Projects({ projects }) {
                 role="button"
                 aria-label={`Подробнее о проекте ${p.title}`}
               >
-                <Cover project={p} />
+                <Cover project={p} index={projects.indexOf(p)} />
                 <div className="project-body">
                   <span className="project-cat">{CATEGORY_LABELS[p.category] || p.category}</span>
                   <h3>{p.title}</h3>
@@ -158,14 +199,14 @@ export default function Projects({ projects }) {
             </div>
           )}
           {active.link && (
-            <p style={{ marginTop: 20 }}>
+            <p style={{ marginTop: 24 }}>
               <a
                 href={active.link}
                 target="_blank"
                 rel="noreferrer"
                 className="btn btn-ghost btn-sm"
               >
-                Открыть проект <Icon name="arrow-right" size={16} />
+                Открыть проект <Icon name="arrow-right" size={15} />
               </a>
             </p>
           )}

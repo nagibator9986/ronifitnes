@@ -17,12 +17,12 @@ export default function Founder({ settings }) {
     .filter(Boolean)
 
   return (
-    <section className="section" id="about">
+    <section className="section sec-paper" id="about">
       <div className="container">
         <Reveal className="section-head">
-          <span className="section-kicker">О нас</span>
+          <span className="section-kicker">05 / Основатель</span>
           <h2 className="section-title">
-            Экспертиза, на которую <span className="grad-text">можно опереться</span>
+            Экспертиза, на которую <em>можно опереться</em>
           </h2>
         </Reveal>
         <div className="founder-wrap">

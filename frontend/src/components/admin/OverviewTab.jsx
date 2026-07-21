@@ -30,7 +30,7 @@ export default function OverviewTab({ onOpenMessages }) {
       <div className="admin-stats">
         {CARDS.map((c) => (
           <div className="card admin-stat" key={c.key}>
-            <div className="v grad-text">{data[c.key]}</div>
+            <div className="v">{data[c.key]}</div>
             <div className="l">{c.label}</div>
           </div>
         ))}
