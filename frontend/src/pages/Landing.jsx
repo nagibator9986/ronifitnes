@@ -4,6 +4,7 @@ import { api } from '../api'
 import Footer from '../components/Footer'
 import Navbar from '../components/Navbar'
 import Contact from '../components/landing/Contact'
+import Faq from '../components/landing/Faq'
 import Founder from '../components/landing/Founder'
 import Hero from '../components/landing/Hero'
 import Partners from '../components/landing/Partners'
@@ -27,7 +28,7 @@ export default function Landing() {
     return (
       <div className="page-loader">
         <div style={{ textAlign: 'center' }}>
-          <p style={{ marginBottom: 16, color: 'var(--muted)' }}>
+          <p style={{ marginBottom: 16, color: 'var(--s-muted)' }}>
             Не удалось загрузить данные. Проверьте, что backend запущен.
           </p>
           <button className="btn btn-ghost btn-sm" onClick={() => window.location.reload()}>
@@ -48,8 +49,12 @@ export default function Landing() {
 
   return (
     <>
+      <a href="#main" className="skip-link">
+        К содержанию
+      </a>
+      <div className="grain" aria-hidden="true" />
       <Navbar />
-      <main>
+      <main id="main">
         <Hero settings={data.settings} />
         <TechMarquee />
         <Services services={data.services} />
@@ -57,6 +62,7 @@ export default function Landing() {
         <Projects projects={data.projects} />
         <Partners partners={data.partners} />
         <Founder settings={data.settings} />
+        <Faq />
         <Contact settings={data.settings} />
       </main>
       <Footer settings={data.settings} />

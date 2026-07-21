@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { api, apiError } from '../../api'
 import Icon from '../Icon'
 import Reveal from '../Reveal'
+import SectionHead from './SectionHead'
 
 const EMPTY = { name: '', email: '', phone: '', company: '', message: '' }
 
@@ -38,37 +39,23 @@ export default function Contact({ settings }) {
   ].filter(Boolean)
 
   return (
-    <section className="section" id="contact">
+    <section className="section sec-paper" id="contact">
       <div className="container">
-        <Reveal>
-          <div className="cta-banner" style={{ marginBottom: 90 }}>
-            <span className="section-kicker" style={{ justifyContent: 'center' }}>
-              06 / Контакты
-            </span>
-            <h2>
-              Готовы внедрить AI <em>в свой бизнес?</em>
-            </h2>
-            <p>
-              Расскажите о своей задаче — предложим решение, оценим сроки и покажем, какой
-              эффект даст внедрение. Первая консультация бесплатна.
-            </p>
-            <a href="#contact-form" className="btn btn-primary">
-              Оставить заявку <Icon name="arrow-right" size={16} />
-            </a>
-          </div>
-        </Reveal>
+        <SectionHead
+          num="07"
+          kicker="Контакты"
+          title={
+            <>
+              Свяжитесь <em>с нами</em>
+            </>
+          }
+          sub="Ответим в течение рабочего дня. Можно коротко: чем занимаетесь и какую задачу хотите решить — остальное выясним на созвоне."
+        />
 
         <div className="contact-wrap" id="contact-form">
           <Reveal>
             <div className="contact-info">
-              <h2>
-                Свяжитесь <em>с нами</em>
-              </h2>
-              <p>
-                Ответим в течение рабочего дня. Можно коротко: чем занимаетесь и какую
-                задачу хотите решить — остальное выясним на созвоне.
-              </p>
-              <div className="contact-list">
+              <div className="contact-list" style={{ marginTop: 4 }}>
                 {items.map((it) =>
                   it.href ? (
                     <a
@@ -93,6 +80,17 @@ export default function Contact({ settings }) {
                   ),
                 )}
               </div>
+              <Reveal delay={150}>
+                <div className="cta-banner" style={{ marginTop: 44, textAlign: 'left', padding: '34px 32px' }}>
+                  <h2 style={{ fontSize: '1.35rem', marginBottom: 10 }}>
+                    Первая консультация — <em>бесплатно</em>
+                  </h2>
+                  <p style={{ margin: 0, maxWidth: 'none' }}>
+                    Покажем похожие кейсы, оценим сроки и честно скажем, если AI вам
+                    пока не нужен.
+                  </p>
+                </div>
+              </Reveal>
             </div>
           </Reveal>
 

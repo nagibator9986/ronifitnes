@@ -1,4 +1,5 @@
 import Reveal from '../Reveal'
+import SectionHead from './SectionHead'
 
 function initials(name) {
   return (name || 'A')
@@ -19,12 +20,15 @@ export default function Founder({ settings }) {
   return (
     <section className="section sec-paper" id="about">
       <div className="container">
-        <Reveal className="section-head">
-          <span className="section-kicker">05 / Основатель</span>
-          <h2 className="section-title">
-            Экспертиза, на которую <em>можно опереться</em>
-          </h2>
-        </Reveal>
+        <SectionHead
+          num="05"
+          kicker="Основатель"
+          title={
+            <>
+              Экспертиза, на которую <em>можно опереться</em>
+            </>
+          }
+        />
         <div className="founder-wrap">
           <Reveal>
             <div className="founder-photo">
@@ -40,6 +44,11 @@ export default function Founder({ settings }) {
               <h3>{s.founder_name}</h3>
               <p className="founder-role">{s.founder_role}</p>
               <p className="founder-bio">{s.founder_bio}</p>
+              {s.founder_quote && (
+                <blockquote className="founder-quote">
+                  <p>«{s.founder_quote}»</p>
+                </blockquote>
+              )}
               {skills.length > 0 && (
                 <div className="founder-skills">
                   {skills.map((skill) => (

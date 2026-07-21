@@ -35,6 +35,7 @@ DEFAULT_SETTINGS = {
         "результатом."
     ),
     "founder_skills": "Python, Flask, FastAPI, PostgreSQL, PyTorch, LLM & RAG, LangChain, Computer Vision, MLOps, Highload",
+    "founder_quote": "Хороший AI-продукт — это когда технология незаметна, а результат измерим.",
     "founder_photo": "",
     "contact_email": "tleubekov.super@gmail.com",
     "contact_phone": "+7 (700) 000-00-00",

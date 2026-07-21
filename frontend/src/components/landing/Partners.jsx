@@ -1,4 +1,5 @@
 import Reveal from '../Reveal'
+import SectionHead from './SectionHead'
 
 function initials(name) {
   return name
@@ -14,20 +15,22 @@ export default function Partners({ partners }) {
   return (
     <section className="section" id="partners">
       <div className="container">
-        <Reveal className="section-head">
-          <span className="section-kicker">04 / Партнёры</span>
-          <h2 className="section-title">
-            Компании, с которыми <em>мы сотрудничаем</em>
-          </h2>
-          <p className="section-sub">
-            Нам доверяют команды из финтеха, ритейла, логистики, медицины и образования.
-          </p>
-        </Reveal>
+        <SectionHead
+          num="04"
+          kicker="Партнёры"
+          title={
+            <>
+              Компании, с которыми <em>мы сотрудничаем</em>
+            </>
+          }
+          sub="Нам доверяют команды из финтеха, ритейла, логистики, медицины и образования."
+        />
         <Reveal>
           <div className="partners-grid">
-            {partners.map((p) => {
+            {partners.map((p, i) => {
               const body = (
                 <>
+                  <span className="partner-num">{String(i + 1).padStart(2, '0')}</span>
                   <div className="partner-logo">
                     {p.logo_url ? <img src={p.logo_url} alt={p.name} loading="lazy" /> : initials(p.name)}
                   </div>

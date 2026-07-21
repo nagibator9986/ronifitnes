@@ -5,8 +5,11 @@ const TECH = [
 ]
 
 export default function TechMarquee() {
-  const row = (key) => TECH.map((t) => (
-    <span className="marquee-item" key={`${key}-${t}`}>{t}</span>
+  // чередуем моно и курсивный сериф — типографский ритм
+  const row = (key) => TECH.map((t, i) => (
+    <span className={`marquee-item ${i % 2 ? 'serif' : ''}`} key={`${key}-${t}`}>
+      {t}
+    </span>
   ))
 
   return (

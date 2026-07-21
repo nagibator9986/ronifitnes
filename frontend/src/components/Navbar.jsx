@@ -4,22 +4,40 @@ import Icon from './Icon'
 import Logo from './Logo'
 
 const LINKS = [
-  { href: '#services', label: 'Услуги' },
-  { href: '#projects', label: 'Проекты' },
-  { href: '#partners', label: 'Партнёры' },
-  { href: '#about', label: 'О нас' },
-  { href: '#contact', label: 'Контакты' },
+  { href: '#services', id: 'services', label: 'Услуги' },
+  { href: '#projects', id: 'projects', label: 'Проекты' },
+  { href: '#partners', id: 'partners', label: 'Партнёры' },
+  { href: '#about', id: 'about', label: 'О нас' },
+  { href: '#contact', id: 'contact', label: 'Контакты' },
 ]
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
+  const [active, setActive] = useState('')
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24)
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // scrollspy: подсвечиваем пункт меню текущей секции
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) setActive(e.target.id)
+        }
+      },
+      { rootMargin: '-35% 0px -60% 0px' },
+    )
+    LINKS.forEach((l) => {
+      const el = document.getElementById(l.id)
+      if (el) observer.observe(el)
+    })
+    return () => observer.disconnect()
   }, [])
 
   return (
@@ -32,12 +50,14 @@ export default function Navbar() {
           <ul className="nav-links">
             {LINKS.map((l) => (
               <li key={l.href}>
-                <a href={l.href}>{l.label}</a>
+                <a href={l.href} className={active === l.id ? 'active' : ''}>
+                  {l.label}
+                </a>
               </li>
             ))}
           </ul>
         </nav>
-        <a href="#contact" className="btn btn-primary btn-sm nav-cta">
+        <a href="#contact-form" className="btn btn-primary btn-sm nav-cta">
           Обсудить проект
         </a>
         <button
@@ -55,7 +75,7 @@ export default function Navbar() {
               {l.label}
             </a>
           ))}
-          <a href="#contact" className="btn btn-primary" onClick={() => setOpen(false)}>
+          <a href="#contact-form" className="btn" onClick={() => setOpen(false)}>
             Обсудить проект
           </a>
         </div>

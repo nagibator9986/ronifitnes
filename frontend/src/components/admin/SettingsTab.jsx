@@ -32,6 +32,7 @@ const GROUPS = [
       { key: 'founder_role', label: 'Роль / должность' },
       { key: 'founder_photo', label: 'Фото', type: 'image', uploadKind: 'founder', full: true },
       { key: 'founder_bio', label: 'Биография', type: 'textarea', rows: 5, full: true },
+      { key: 'founder_quote', label: 'Цитата (выделенная)', type: 'textarea', rows: 2, full: true },
       {
         key: 'founder_skills',
         label: 'Навыки (через запятую)',

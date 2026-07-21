@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import Icon from '../Icon'
 import Modal from '../Modal'
 import Reveal from '../Reveal'
+import SectionHead from './SectionHead'
 
 export const CATEGORY_LABELS = {
   chatbot: 'Чат-боты',
@@ -11,6 +12,15 @@ export const CATEGORY_LABELS = {
   vision: 'Компьютерное зрение',
   automation: 'Автоматизация',
   analytics: 'Аналитика',
+}
+
+const CATEGORY_CODES = {
+  chatbot: 'BOT',
+  agent: 'AGT',
+  ml: 'ML',
+  vision: 'CV',
+  automation: 'AUT',
+  analytics: 'BI',
 }
 
 /** Детерминированный ГПСЧ, чтобы обложка проекта не менялась между рендерами. */
@@ -26,10 +36,10 @@ function mulberry32(seed) {
 }
 
 /** Генеративная обложка: белые «осколки» на чёрном — мотив логотипа. */
-function ShardCover({ seed, index }) {
-  const shards = useMemo(() => {
+export function ShardCover({ seed, index, category }) {
+  const art = useMemo(() => {
     const rnd = mulberry32(seed * 7919 + 17)
-    const out = []
+    const shards = []
     const n = 9 + Math.floor(rnd() * 5)
     for (let i = 0; i < n; i++) {
       const cx = 30 + rnd() * 260
@@ -42,13 +52,21 @@ function ShardCover({ seed, index }) {
         const rr = r * (0.5 + rnd() * 0.7)
         pts.push(`${(cx + Math.cos(a) * rr).toFixed(1)},${(cy + Math.sin(a) * rr).toFixed(1)}`)
       }
-      out.push({
+      shards.push({
         points: pts.join(' '),
         filled: rnd() > 0.4,
         opacity: 0.55 + rnd() * 0.45,
       })
     }
-    return out
+    // две диагональные волосяные линии для глубины композиции
+    const lines = [0, 1].map(() => ({
+      x1: rnd() * 320,
+      y1: -10,
+      x2: rnd() * 320,
+      y2: 210,
+      opacity: 0.14 + rnd() * 0.12,
+    }))
+    return { shards, lines }
   }, [seed])
 
   return (
@@ -56,7 +74,10 @@ function ShardCover({ seed, index }) {
       <svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice">
         <rect width="320" height="200" fill="#000" />
         <rect x="12" y="12" width="296" height="176" fill="none" stroke="#f6f3ec" strokeOpacity="0.5" strokeWidth="1" />
-        {shards.map((sh, i) =>
+        {art.lines.map((l, i) => (
+          <line key={`l${i}`} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke="#f6f3ec" strokeOpacity={l.opacity} />
+        ))}
+        {art.shards.map((sh, i) =>
           sh.filled ? (
             <polygon key={i} points={sh.points} fill="#f6f3ec" fillOpacity={sh.opacity} />
           ) : (
@@ -73,6 +94,18 @@ function ShardCover({ seed, index }) {
         >
           {String(index + 1).padStart(2, '0')}
         </text>
+        <text
+          x="294"
+          y="36"
+          textAnchor="end"
+          fill="#f6f3ec"
+          fillOpacity="0.72"
+          fontFamily="JetBrains Mono, monospace"
+          fontSize="11"
+          letterSpacing="3"
+        >
+          {CATEGORY_CODES[category] || 'AI'}
+        </text>
       </svg>
     </div>
   )
@@ -84,20 +117,23 @@ function Cover({ project, index }) {
       {project.image_url ? (
         <img src={project.image_url} alt={project.title} loading="lazy" />
       ) : (
-        <ShardCover seed={project.id} index={index} />
+        <ShardCover seed={project.id} index={index} category={project.category} />
       )}
       {project.is_featured && (
         <span className="project-featured">
           <Icon name="star" size={11} /> Флагман
         </span>
       )}
+      <span className="project-cta">
+        Смотреть кейс <Icon name="arrow-right" size={13} />
+      </span>
     </div>
   )
 }
 
 export default function Projects({ projects }) {
   const [filter, setFilter] = useState('all')
-  const [active, setActive] = useState(null)
+  const [activeIdx, setActiveIdx] = useState(-1)
 
   const categories = useMemo(() => {
     const present = [...new Set(projects.map((p) => p.category))]
@@ -105,27 +141,35 @@ export default function Projects({ projects }) {
   }, [projects])
 
   const shown = filter === 'all' ? projects : projects.filter((p) => p.category === filter)
+  const active = activeIdx >= 0 ? shown[activeIdx] : null
+
+  const step = (delta) => {
+    setActiveIdx((i) => (i + delta + shown.length) % shown.length)
+  }
 
   if (!projects.length) return null
 
   return (
     <section className="section sec-paper" id="projects">
       <div className="container">
-        <Reveal className="section-head">
-          <span className="section-kicker">03 / Портфолио</span>
-          <h2 className="section-title">
-            Кейсы с <em>измеримым результатом</em>
-          </h2>
-          <p className="section-sub">
-            Каждый проект — это конкретные цифры: сэкономленные часы, выросшая конверсия,
-            снижение издержек.
-          </p>
-        </Reveal>
+        <SectionHead
+          num="03"
+          kicker="Портфолио"
+          title={
+            <>
+              Кейсы с <em>измеримым результатом</em>
+            </>
+          }
+          sub="Каждый проект — это конкретные цифры: сэкономленные часы, выросшая конверсия, снижение издержек."
+        />
 
         <div className="projects-filters">
           <button
             className={`filter-chip ${filter === 'all' ? 'active' : ''}`}
-            onClick={() => setFilter('all')}
+            onClick={() => {
+              setFilter('all')
+              setActiveIdx(-1)
+            }}
           >
             Все проекты
           </button>
@@ -133,7 +177,10 @@ export default function Projects({ projects }) {
             <button
               key={c}
               className={`filter-chip ${filter === c ? 'active' : ''}`}
-              onClick={() => setFilter(c)}
+              onClick={() => {
+                setFilter(c)
+                setActiveIdx(-1)
+              }}
             >
               {CATEGORY_LABELS[c]}
             </button>
@@ -145,8 +192,8 @@ export default function Projects({ projects }) {
             <Reveal key={p.id} delay={(i % 3) * 90}>
               <article
                 className="card project-card"
-                onClick={() => setActive(p)}
-                onKeyDown={(e) => e.key === 'Enter' && setActive(p)}
+                onClick={() => setActiveIdx(i)}
+                onKeyDown={(e) => e.key === 'Enter' && setActiveIdx(i)}
                 tabIndex={0}
                 role="button"
                 aria-label={`Подробнее о проекте ${p.title}`}
@@ -174,7 +221,18 @@ export default function Projects({ projects }) {
       </div>
 
       {active && (
-        <Modal onClose={() => setActive(null)} wide>
+        <Modal onClose={() => setActiveIdx(-1)} wide>
+          <div className="modal-cover">
+            {active.image_url ? (
+              <img src={active.image_url} alt={active.title} />
+            ) : (
+              <ShardCover
+                seed={active.id}
+                index={projects.indexOf(active)}
+                category={active.category}
+              />
+            )}
+          </div>
           <span className="project-cat">{CATEGORY_LABELS[active.category] || active.category}</span>
           <h3>{active.title}</h3>
           {active.client && <p className="project-client">Клиент: {active.client}</p>}
@@ -209,6 +267,15 @@ export default function Projects({ projects }) {
                 Открыть проект <Icon name="arrow-right" size={15} />
               </a>
             </p>
+          )}
+          {shown.length > 1 && (
+            <div className="modal-nav">
+              <button onClick={() => step(-1)}>← Пред. проект</button>
+              <span className="counter">
+                {String(activeIdx + 1).padStart(2, '0')} / {String(shown.length).padStart(2, '0')}
+              </span>
+              <button onClick={() => step(1)}>След. проект →</button>
+            </div>
           )}
         </Modal>
       )}

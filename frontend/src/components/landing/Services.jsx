@@ -1,21 +1,22 @@
 import Icon from '../Icon'
 import Reveal from '../Reveal'
+import SectionHead from './SectionHead'
 
 export default function Services({ services }) {
   if (!services.length) return null
   return (
     <section className="section sec-paper" id="services">
       <div className="container">
-        <Reveal className="section-head">
-          <span className="section-kicker">01 / Услуги</span>
-          <h2 className="section-title">
-            AI-решения <em>под любую задачу</em>
-          </h2>
-          <p className="section-sub">
-            От первого прототипа до промышленной эксплуатации — берём на себя весь цикл:
-            данные, модели, интеграции и поддержку.
-          </p>
-        </Reveal>
+        <SectionHead
+          num="01"
+          kicker="Услуги"
+          title={
+            <>
+              AI-решения <em>под любую задачу</em>
+            </>
+          }
+          sub="От первого прототипа до промышленной эксплуатации — берём на себя весь цикл: данные, модели, интеграции и поддержку."
+        />
         <Reveal>
           <div className="services-grid">
             {services.map((s, i) => (

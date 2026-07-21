@@ -70,6 +70,9 @@ export default function Hero({ settings }) {
   return (
     <section className="hero" id="top">
       <ShardField className="hero-canvas" />
+      <span className="hero-watermark" aria-hidden="true">
+        Illuminart
+      </span>
       <div className="container">
         <div className="hero-grid">
           <div className="hero-content">
@@ -88,7 +91,7 @@ export default function Hero({ settings }) {
             </h1>
             <p className="hero-sub">{s.hero_subtitle}</p>
             <div className="hero-actions">
-              <a href="#contact" className="btn btn-primary">
+              <a href="#contact-form" className="btn btn-primary">
                 Обсудить проект <Icon name="arrow-right" size={16} />
               </a>
               <a href="#projects" className="btn btn-ghost">
@@ -98,7 +101,11 @@ export default function Hero({ settings }) {
           </div>
 
           <figure className="hero-art">
-            <img src="/brand/logo.jpg" alt="IlluminartAI — фирменный знак" />
+            <img
+              src="/brand/logo.jpg"
+              alt="IlluminartAI — фирменный знак"
+              fetchpriority="high"
+            />
             <figcaption>
               <span>Illuminart</span>
               <span>est. AI</span>
