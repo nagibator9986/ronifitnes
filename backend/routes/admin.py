@@ -253,7 +253,7 @@ def upload():
     if file is None or not file.filename:
         return jsonify({"error": "Файл не передан"}), 400
     kind = request.form.get("kind", "misc")
-    if kind not in {"projects", "partners", "founder", "misc"}:
+    if kind not in {"projects", "partners", "team", "misc"}:
         kind = "misc"
     try:
         url = save_upload(file, kind)

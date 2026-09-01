@@ -26,16 +26,16 @@ const GROUPS = [
     ],
   },
   {
-    title: 'Основатель',
+    title: 'Команда',
     fields: [
-      { key: 'founder_name', label: 'Имя' },
-      { key: 'founder_role', label: 'Роль / должность' },
-      { key: 'founder_photo', label: 'Фото', type: 'image', uploadKind: 'founder', full: true },
-      { key: 'founder_bio', label: 'Биография', type: 'textarea', rows: 5, full: true },
-      { key: 'founder_quote', label: 'Цитата (выделенная)', type: 'textarea', rows: 2, full: true },
+      { key: 'team_name', label: 'Заголовок блока' },
+      { key: 'team_role', label: 'Направления (подзаголовок)' },
+      { key: 'team_photo', label: 'Фото команды', type: 'image', uploadKind: 'team', full: true },
+      { key: 'team_bio', label: 'О команде', type: 'textarea', rows: 5, full: true },
+      { key: 'team_quote', label: 'Цитата-принцип (выделенная)', type: 'textarea', rows: 2, full: true },
       {
-        key: 'founder_skills',
-        label: 'Навыки (через запятую)',
+        key: 'team_skills',
+        label: 'Стек и навыки (через запятую)',
         type: 'textarea',
         rows: 2,
         full: true,
@@ -96,7 +96,7 @@ export default function SettingsTab() {
       <div className="admin-head">
         <div>
           <h1>Настройки сайта</h1>
-          <p>Тексты лендинга, контакты и данные основателя</p>
+          <p>Тексты лендинга, контакты и блок команды</p>
         </div>
       </div>
 

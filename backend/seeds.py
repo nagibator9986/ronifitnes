@@ -23,20 +23,21 @@ DEFAULT_SETTINGS = {
     "stat_years_label": "лет в разработке",
     "stat_uptime": "24/7",
     "stat_uptime_label": "поддержка решений",
-    "founder_name": "Тлеубеков Азамат Галымулы",
-    "founder_role": "Основатель · Senior Backend Developer · ML/AI Engineer",
-    "founder_bio": (
-        "Более 7 лет строю высоконагруженные backend-системы и внедряю машинное "
-        "обучение в реальные бизнес-процессы. Прошёл путь от инженера до "
-        "архитектора AI-продуктов: чат-боты, автономные агенты, RAG-системы, "
-        "компьютерное зрение и предиктивная аналитика.\n"
-        "Основал IlluminartAI, чтобы компании любого масштаба могли получить "
-        "AI-решения уровня enterprise — быстро, прозрачно и с измеримым "
+    "team_name": "Команда IlluminartAI",
+    "team_role": "Senior Backend · ML/AI Engineering · Data · Product",
+    "team_bio": (
+        "Ядро IlluminartAI — senior-инженеры с опытом 7+ лет: backend-разработчики, "
+        "ML/AI-инженеры и продуктовые дизайнеры, за плечами которых — "
+        "высоконагруженные системы и машинное обучение в реальных бизнес-процессах.\n"
+        "Каждый в команде прошёл путь от инженера до архитектора AI-продуктов: "
+        "чат-боты, автономные агенты, RAG-системы, компьютерное зрение и "
+        "предиктивная аналитика. Вместе мы делаем AI-решения уровня enterprise "
+        "доступными компаниям любого масштаба — быстро, прозрачно и с измеримым "
         "результатом."
     ),
-    "founder_skills": "Python, Flask, FastAPI, PostgreSQL, PyTorch, LLM & RAG, LangChain, Computer Vision, MLOps, Highload",
-    "founder_quote": "Хороший AI-продукт — это когда технология незаметна, а результат измерим.",
-    "founder_photo": "",
+    "team_skills": "Python, Flask, FastAPI, PostgreSQL, PyTorch, LLM & RAG, LangChain, Computer Vision, MLOps, Highload",
+    "team_quote": "Хороший AI-продукт — это когда технология незаметна, а результат измерим.",
+    "team_photo": "",
     "contact_email": "tleubekov.super@gmail.com",
     "contact_phone": "+7 (700) 000-00-00",
     "contact_telegram": "https://t.me/illuminartai",

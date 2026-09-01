@@ -5,7 +5,7 @@ import Footer from '../components/Footer'
 import Navbar from '../components/Navbar'
 import Contact from '../components/landing/Contact'
 import Faq from '../components/landing/Faq'
-import Founder from '../components/landing/Founder'
+import Team from '../components/landing/Team'
 import Hero from '../components/landing/Hero'
 import Partners from '../components/landing/Partners'
 import Process from '../components/landing/Process'
@@ -61,7 +61,7 @@ export default function Landing() {
         <Process />
         <Projects projects={data.projects} />
         <Partners partners={data.partners} />
-        <Founder settings={data.settings} />
+        <Team settings={data.settings} />
         <Faq />
         <Contact settings={data.settings} />
       </main>

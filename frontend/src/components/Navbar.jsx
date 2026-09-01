@@ -7,7 +7,7 @@ const LINKS = [
   { href: '#services', id: 'services', label: 'Услуги' },
   { href: '#projects', id: 'projects', label: 'Проекты' },
   { href: '#partners', id: 'partners', label: 'Партнёры' },
-  { href: '#about', id: 'about', label: 'О нас' },
+  { href: '#about', id: 'about', label: 'Команда' },
   { href: '#contact', id: 'contact', label: 'Контакты' },
 ]
 
